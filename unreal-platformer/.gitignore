@@ -1,0 +1,20 @@
+# Unreal Engine generated folders
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+
+# IDE / toolchain files
+.vs/
+.vscode/
+.idea/
+*.sln
+*.xcworkspace
+*.code-workspace
+*.VC.db
+*.VC.opendb
+*.opensdf
+*.sdf
+*.suo
+*.opendb
+.vsconfig

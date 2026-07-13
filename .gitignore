@@ -200,3 +200,6 @@
 !/.sublime
 /.sublime/homebrew.sublime-workspace
 !/.vscode
+
+# Unignore the code-only Unreal Engine platformer project
+!/unreal-platformer
