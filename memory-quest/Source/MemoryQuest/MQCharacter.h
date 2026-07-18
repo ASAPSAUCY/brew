@@ -2,9 +2,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+// Full include (not a forward declaration): the inline TWeakObjectPtr
+// assignment below needs the complete type in every translation unit,
+// including the UHT-generated one.
+#include "MQInteractable.h"
 #include "MQCharacter.generated.h"
 
-class AMQInteractable;
 class UCameraComponent;
 class UInputAction;
 class UInputMappingContext;
