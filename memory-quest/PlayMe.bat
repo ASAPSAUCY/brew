@@ -17,23 +17,68 @@ echo   One-click build and play
 echo ============================================
 echo.
 
-rem ---- Find Unreal Engine -------------------------------------------------
+rem ---- Find Unreal Engine on ANY drive ------------------------------------
 set "ENGINE="
-for /f "tokens=2*" %%A in ('reg query "HKLM\SOFTWARE\EpicGames\Unreal Engine\5.8" /v InstalledDirectory 2^>nul ^| findstr /i InstalledDirectory') do set "ENGINE=%%B"
-if defined ENGINE if not exist "!ENGINE!\Engine\Build\BatchFiles\Build.bat" set "ENGINE="
+
+rem 0. A previously remembered location.
+if exist "%~dp0EnginePath.txt" (
+    set /p ENGINE=<"%~dp0EnginePath.txt"
+    if defined ENGINE if not exist "!ENGINE!\Engine\Build\BatchFiles\Build.bat" set "ENGINE="
+)
+
+rem 1. The Windows registry - Epic records every engine install here,
+rem    whichever drive it lives on.
 if not defined ENGINE (
-    for /d %%D in ("%ProgramFiles%\Epic Games\UE_*") do (
-        if exist "%%~fD\Engine\Build\BatchFiles\Build.bat" set "ENGINE=%%~fD"
+    for /f "delims=" %%K in ('reg query "HKLM\SOFTWARE\EpicGames\Unreal Engine" 2^>nul') do (
+        for /f "tokens=2*" %%A in ('reg query "%%K" /v InstalledDirectory 2^>nul ^| findstr /i InstalledDirectory') do (
+            if exist "%%B\Engine\Build\BatchFiles\Build.bat" set "ENGINE=%%B"
+        )
     )
 )
+
+rem 2. The Epic Games Launcher's own install list, also drive-independent.
 if not defined ENGINE (
-    echo Unreal Engine was NOT found on this PC.
+    for /f "usebackq delims=" %%P in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$d = Join-Path $env:ProgramData 'Epic\UnrealEngineLauncher\LauncherInstalled.dat'; if (Test-Path $d) { (Get-Content -Raw $d | ConvertFrom-Json).InstallationList | ForEach-Object InstallLocation }" 2^>nul`) do (
+        if exist "%%P\Engine\Build\BatchFiles\Build.bat" set "ENGINE=%%P"
+    )
+)
+
+rem 3. Scan the usual folder names on every drive letter.
+if not defined ENGINE (
+    for %%L in (C D E F G H I J K) do (
+        for /d %%D in ("%%L:\Epic Games\UE_*") do if exist "%%~fD\Engine\Build\BatchFiles\Build.bat" set "ENGINE=%%~fD"
+        for /d %%D in ("%%L:\Program Files\Epic Games\UE_*") do if exist "%%~fD\Engine\Build\BatchFiles\Build.bat" set "ENGINE=%%~fD"
+        for /d %%D in ("%%L:\Games\Epic Games\UE_*") do if exist "%%~fD\Engine\Build\BatchFiles\Build.bat" set "ENGINE=%%~fD"
+        for /d %%D in ("%%L:\Games\UE_*") do if exist "%%~fD\Engine\Build\BatchFiles\Build.bat" set "ENGINE=%%~fD"
+        for /d %%D in ("%%L:\UE_*") do if exist "%%~fD\Engine\Build\BatchFiles\Build.bat" set "ENGINE=%%~fD"
+        for /d %%D in ("%%L:\Unreal Engine\UE_*") do if exist "%%~fD\Engine\Build\BatchFiles\Build.bat" set "ENGINE=%%~fD"
+    )
+)
+
+rem 4. Last resort: ask.
+if not defined ENGINE (
+    echo I could not find Unreal Engine automatically, but you can tell me
+    echo where it is - this only has to be done once.
     echo.
-    echo Fix: open the Epic Games Launcher, go to the Unreal Engine tab,
-    echo and install Unreal Engine 5.8. Then run this script again.
+    echo The folder is usually called UE_5.8 and contains an Engine folder.
+    echo Tip: in the Epic Games Launcher, the engine tile's dropdown arrow
+    echo has an option to open its install folder.
+    echo.
+    set /p ENGINE=Paste the engine folder path here and press Enter:
+    set ENGINE=!ENGINE:"=!
+)
+
+if not exist "!ENGINE!\Engine\Build\BatchFiles\Build.bat" (
+    echo.
+    echo That does not look like an Unreal Engine folder. I checked for:
+    echo   !ENGINE!\Engine\Build\BatchFiles\Build.bat
+    echo Run this script again and double-check the path.
     pause
     exit /b 1
 )
+
+rem Remember it for next time.
+>"%~dp0EnginePath.txt" echo !ENGINE!
 echo Found Unreal Engine:  !ENGINE!
 
 rem ---- Check Visual Studio C++ tools --------------------------------------
@@ -44,7 +89,7 @@ if exist "%VSWHERE%" (
 )
 if not defined VSPATH (
     echo Visual Studio 2022 with C++ tools was NOT found - the game cannot
-    echo compile without it. This is almost certainly why the build failed.
+    echo compile without it.
     echo.
     echo Fix - takes about 15 minutes:
     echo   1. Install "Visual Studio 2022 Community" - it is free

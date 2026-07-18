@@ -18,3 +18,6 @@ Saved/
 *.suo
 *.opendb
 .vsconfig
+
+# PlayMe.bat remembers your engine location here
+EnginePath.txt
