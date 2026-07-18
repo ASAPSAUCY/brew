@@ -1,6 +1,6 @@
 # Unreal Platformer
 
-A third-person action platformer for **Unreal Engine 5.4+**, written entirely in C++ with **zero binary assets** — no `.umap` levels, no `.uasset` meshes, materials, input actions, or UI. Everything you see and play is constructed in code at startup, using only the basic shapes that ship inside the engine.
+A third-person action platformer for **Unreal Engine 5.8**, written entirely in C++ with **zero binary assets** — no `.umap` levels, no `.uasset` meshes, materials, input actions, or UI. Everything you see and play is constructed in code at startup, using only the basic shapes that ship inside the engine.
 
 ## The game
 
@@ -26,7 +26,7 @@ If the vertical camera feels inverted to you, flip `bInvertLookY` in `Platformer
 
 ## Requirements
 
-- **Unreal Engine 5.4 or newer** (install via the Epic Games Launcher)
+- **Unreal Engine 5.8** (install via the Epic Games Launcher)
 - **Windows:** Visual Studio 2022 with the **Game development with C++** and **.NET desktop development** workloads (includes the Windows 10/11 SDK)
 - **macOS:** Xcode
 
@@ -38,7 +38,7 @@ If the vertical camera feels inverted to you, flip `bInvertLookY` in `Platformer
 2. When prompted that modules are missing and need to be rebuilt, click **Yes** and wait for the compile.
 3. When the editor opens, press **Play** (the toolbar button, or `Alt+P`).
 
-> If you're on UE 5.5/5.6, first right-click `UnrealPlatformer.uproject` → **Switch Unreal Engine version...** and pick your engine, then proceed as above.
+> If you are on a different UE version, first right-click `UnrealPlatformer.uproject` → **Switch Unreal Engine version...** and pick your engine, then proceed as above.
 
 ### The IDE way (Windows)
 
@@ -50,7 +50,7 @@ If the vertical camera feels inverted to you, flip `bInvertLookY` in `Platformer
 ### The command-line way
 
 ```bat
-"C:\Program Files\Epic Games\UE_5.4\Engine\Build\BatchFiles\Build.bat" ^
+"C:\Program Files\Epic Games\UE_5.8\Engine\Build\BatchFiles\Build.bat" ^
     UnrealPlatformerEditor Win64 Development ^
     -project="C:\path\to\unreal-platformer\UnrealPlatformer.uproject" -waitmutex
 ```

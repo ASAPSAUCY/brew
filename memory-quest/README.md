@@ -2,7 +2,7 @@
 
 *Four years in the making.*
 
-A cozy exploration game — Animal Crossing meets Pokémon — about Kyle and Claudia's four years together. Built for **Unreal Engine 5.4+**, written entirely in C++ with **zero binary assets**: the whole island, every creature, every line of dialogue and the UI are constructed in code at startup.
+A cozy exploration game — Animal Crossing meets Pokémon — about Kyle and Claudia's four years together. Built for **Unreal Engine 5.8**, written entirely in C++ with **zero binary assets**: the whole island, every creature, every line of dialogue and the UI are constructed in code at startup.
 
 ## The game
 
@@ -41,18 +41,18 @@ The camera is a fixed cozy top-down follow camera — no mouse needed.
 
 ## Building and playing
 
-Requirements: **Unreal Engine 5.4+** (Epic Games Launcher), and Visual Studio 2022 with the *Game development with C++* workload (Windows) or Xcode (macOS).
+Requirements: **Unreal Engine 5.8** (Epic Games Launcher), and Visual Studio 2022 with the *Game development with C++* workload (Windows) or Xcode (macOS).
 
 1. Double-click `MemoryQuest.uproject`.
 2. Click **Yes** when asked to rebuild the missing modules; wait for the compile.
 3. When the editor opens, press **Play**.
 
-On UE 5.5/5.6: right-click the `.uproject` → **Switch Unreal Engine version...** first.
+On a different UE version: right-click the `.uproject` → **Switch Unreal Engine version...** first.
 
 Command line alternative:
 
 ```bat
-"C:\Program Files\Epic Games\UE_5.4\Engine\Build\BatchFiles\Build.bat" ^
+"C:\Program Files\Epic Games\UE_5.8\Engine\Build\BatchFiles\Build.bat" ^
     MemoryQuestEditor Win64 Development ^
     -project="C:\path\to\memory-quest\MemoryQuest.uproject" -waitmutex
 ```

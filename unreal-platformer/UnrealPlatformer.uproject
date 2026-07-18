@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "5.4",
+	"EngineAssociation": "5.8",
 	"Category": "",
 	"Description": "Code-only third-person action platformer. The entire level is spawned procedurally in C++ - no binary assets.",
 	"Modules": [
