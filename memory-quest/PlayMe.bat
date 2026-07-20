@@ -108,11 +108,15 @@ if not exist "%ProgramFiles(x86)%\Windows Kits\NETFXSDK" (
     echo The .NET Framework SDK was NOT found - Unreal's build tools need it
     echo and the build will fail with a SwarmInterface / NetFxSDK error.
     echo.
-    echo Fix - about 5 minutes:
-    echo   1. Open the "Visual Studio Installer" app from the Start menu
-    echo   2. Click Modify on Visual Studio 2022
-    echo   3. Tick the workload ".NET desktop development"
-    echo   4. Click Modify to install, then run this script again
+    echo Easiest fix - about 5 minutes:
+    echo   1. On the page that just opened, download the ".NET Framework
+    echo      4.8.1 Developer Pack" - the Developer Pack, not the Runtime
+    echo   2. Install it, then run this script again
+    echo.
+    echo Alternative: in the Visual Studio Installer, Modify your install and
+    echo add ".NET desktop development" - or on Build Tools, the individual
+    echo component ".NET Framework 4.8 SDK".
+    start "" "https://dotnet.microsoft.com/en-us/download/dotnet-framework/net481"
     pause
     exit /b 1
 )
