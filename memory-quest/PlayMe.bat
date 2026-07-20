@@ -103,6 +103,20 @@ if not defined VSPATH (
 )
 echo Found Visual Studio:  !VSPATH!
 
+rem ---- Check .NET Framework SDK (Unreal's build tools require it) ----------
+if not exist "%ProgramFiles(x86)%\Windows Kits\NETFXSDK" (
+    echo The .NET Framework SDK was NOT found - Unreal's build tools need it
+    echo and the build will fail with a SwarmInterface / NetFxSDK error.
+    echo.
+    echo Fix - about 5 minutes:
+    echo   1. Open the "Visual Studio Installer" app from the Start menu
+    echo   2. Click Modify on Visual Studio 2022
+    echo   3. Tick the workload ".NET desktop development"
+    echo   4. Click Modify to install, then run this script again
+    pause
+    exit /b 1
+)
+
 rem ---- Build ---------------------------------------------------------------
 echo.
 echo Building Memory Quest... first time takes a few minutes. Coffee time.

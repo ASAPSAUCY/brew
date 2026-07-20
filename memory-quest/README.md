@@ -41,7 +41,7 @@ The camera is a fixed cozy top-down follow camera — no mouse needed.
 
 ## Building and playing
 
-Requirements: **Unreal Engine 5.8** (Epic Games Launcher), and Visual Studio 2022 with the *Game development with C++* workload (Windows) or Xcode (macOS).
+Requirements: **Unreal Engine 5.8** (Epic Games Launcher), and Visual Studio 2022 with the *Game development with C++* AND *.NET desktop development* workloads (Windows) or Xcode (macOS).
 
 1. Double-click `MemoryQuest.uproject`.
 2. Click **Yes** when asked to rebuild the missing modules; wait for the compile.
