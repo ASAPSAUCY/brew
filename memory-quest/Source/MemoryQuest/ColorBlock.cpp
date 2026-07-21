@@ -11,7 +11,7 @@ AColorBlock::AColorBlock()
 	PrimaryActorTick.bCanEverTick = false;
 
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
-	SetRootComponent(MeshComponent);
+	SetRootComponent(MeshComponent.Get());
 	MeshComponent->SetMobility(EComponentMobility::Movable);
 
 	// The cube is the default; the alternatives are cached so BeginPlay can

@@ -20,19 +20,19 @@ ACompanionDog::ACompanionDog()
 	PrimaryActorTick.bCanEverTick = true;
 
 	BodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BodyMesh"));
-	BodyMesh->SetupAttachment(InteractionSphere);
+	BodyMesh->SetupAttachment(InteractionSphere.Get());
 	BodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	BodyMesh->SetRelativeLocation(FVector(0.f, 0.f, 45.f));
 	BodyMesh->SetRelativeScale3D(FVector(0.9f, 0.45f, 0.5f));
 
 	HeadMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HeadMesh"));
-	HeadMesh->SetupAttachment(InteractionSphere);
+	HeadMesh->SetupAttachment(InteractionSphere.Get());
 	HeadMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HeadMesh->SetRelativeLocation(FVector(55.f, 0.f, 82.f));
 	HeadMesh->SetRelativeScale3D(FVector(0.34f, 0.34f, 0.34f));
 
 	TailMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TailMesh"));
-	TailMesh->SetupAttachment(InteractionSphere);
+	TailMesh->SetupAttachment(InteractionSphere.Get());
 	TailMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	TailMesh->SetRelativeLocation(FVector(-55.f, 0.f, 72.f));
 	TailMesh->SetRelativeScale3D(FVector(0.14f, 0.14f, 0.4f));

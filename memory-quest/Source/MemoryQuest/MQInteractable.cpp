@@ -9,7 +9,7 @@ AMQInteractable::AMQInteractable()
 	PrimaryActorTick.bCanEverTick = false;
 
 	InteractionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("InteractionSphere"));
-	SetRootComponent(InteractionSphere);
+	SetRootComponent(InteractionSphere.Get());
 	InteractionSphere->InitSphereRadius(220.f);
 	InteractionSphere->SetMobility(EComponentMobility::Movable);
 	InteractionSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -19,7 +19,7 @@ AMQInteractable::AMQInteractable()
 	InteractionSphere->SetGenerateOverlapEvents(true);
 
 	NameLabel = CreateDefaultSubobject<UTextRenderComponent>(TEXT("NameLabel"));
-	NameLabel->SetupAttachment(InteractionSphere);
+	NameLabel->SetupAttachment(InteractionSphere.Get());
 	NameLabel->SetRelativeLocation(FVector(0.f, 0.f, 175.f));
 	// The camera looks along +X, so labels face back down -X.
 	NameLabel->SetRelativeRotation(FRotator(0.f, 180.f, 0.f));

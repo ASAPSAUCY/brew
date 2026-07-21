@@ -13,13 +13,13 @@
 ATalkNPC::ATalkNPC()
 {
 	BodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BodyMesh"));
-	BodyMesh->SetupAttachment(InteractionSphere);
+	BodyMesh->SetupAttachment(InteractionSphere.Get());
 	BodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	BodyMesh->SetRelativeLocation(FVector(0.f, 0.f, 55.f));
 	BodyMesh->SetRelativeScale3D(FVector(0.6f, 0.6f, 1.1f));
 
 	HeadMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HeadMesh"));
-	HeadMesh->SetupAttachment(InteractionSphere);
+	HeadMesh->SetupAttachment(InteractionSphere.Get());
 	HeadMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HeadMesh->SetRelativeLocation(FVector(0.f, 0.f, 138.f));
 	HeadMesh->SetRelativeScale3D(FVector(0.5f, 0.5f, 0.5f));

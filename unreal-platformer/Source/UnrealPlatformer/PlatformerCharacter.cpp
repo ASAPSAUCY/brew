@@ -47,14 +47,14 @@ APlatformerCharacter::APlatformerCharacter()
 	Movement->BrakingDecelerationFalling = 150.f;
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	CameraBoom->SetupAttachment(RootComponent);
+	CameraBoom->SetupAttachment(GetRootComponent());
 	CameraBoom->TargetArmLength = 450.f;
 	CameraBoom->bUsePawnControlRotation = true;
 	CameraBoom->bEnableCameraLag = true;
 	CameraBoom->CameraLagSpeed = 10.f;
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+	FollowCamera->SetupAttachment(CameraBoom.Get(), USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
 
 	// No skeletal mesh assets exist in this project, so the body is a scaled cube.

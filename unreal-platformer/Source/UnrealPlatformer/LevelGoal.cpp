@@ -16,7 +16,7 @@ ALevelGoal::ALevelGoal()
 	PrimaryActorTick.bCanEverTick = false;
 
 	Trigger = CreateDefaultSubobject<UBoxComponent>(TEXT("Trigger"));
-	SetRootComponent(Trigger);
+	SetRootComponent(Trigger.Get());
 	Trigger->InitBoxExtent(FVector(80.f, 80.f, 120.f));
 	Trigger->SetMobility(EComponentMobility::Movable);
 	Trigger->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -26,7 +26,7 @@ ALevelGoal::ALevelGoal()
 	Trigger->SetGenerateOverlapEvents(true);
 
 	PillarMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PillarMesh"));
-	PillarMesh->SetupAttachment(Trigger);
+	PillarMesh->SetupAttachment(Trigger.Get());
 	PillarMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	PillarMesh->SetRelativeScale3D(FVector(0.6f, 0.6f, 3.f));
 

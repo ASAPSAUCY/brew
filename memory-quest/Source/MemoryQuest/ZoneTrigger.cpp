@@ -11,7 +11,7 @@ AZoneTrigger::AZoneTrigger()
 
 	// Extent 50 so the spawn transform's scale maps 1:1 with a 100-unit box.
 	Bounds = CreateDefaultSubobject<UBoxComponent>(TEXT("Bounds"));
-	SetRootComponent(Bounds);
+	SetRootComponent(Bounds.Get());
 	Bounds->InitBoxExtent(FVector(50.f, 50.f, 50.f));
 	Bounds->SetMobility(EComponentMobility::Movable);
 	Bounds->SetCollisionEnabled(ECollisionEnabled::QueryOnly);

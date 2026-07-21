@@ -14,11 +14,11 @@ AMemoryCreature::AMemoryCreature()
 	PrimaryActorTick.bCanEverTick = true;
 
 	BodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BodyMesh"));
-	BodyMesh->SetupAttachment(InteractionSphere);
+	BodyMesh->SetupAttachment(InteractionSphere.Get());
 	BodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	TopperMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TopperMesh"));
-	TopperMesh->SetupAttachment(BodyMesh);
+	TopperMesh->SetupAttachment(BodyMesh.Get());
 	TopperMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));

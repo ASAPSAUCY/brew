@@ -16,7 +16,7 @@ ACollectibleCoin::ACollectibleCoin()
 	PrimaryActorTick.bCanEverTick = false;
 
 	CollisionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionSphere"));
-	SetRootComponent(CollisionSphere);
+	SetRootComponent(CollisionSphere.Get());
 	CollisionSphere->InitSphereRadius(60.f);
 	CollisionSphere->SetMobility(EComponentMobility::Movable);
 	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -27,7 +27,7 @@ ACollectibleCoin::ACollectibleCoin()
 
 	// A squashed cylinder standing on its edge reads as a coin.
 	CoinMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CoinMesh"));
-	CoinMesh->SetupAttachment(CollisionSphere);
+	CoinMesh->SetupAttachment(CollisionSphere.Get());
 	CoinMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	CoinMesh->SetRelativeRotation(FRotator(90.f, 0.f, 0.f));
 	CoinMesh->SetRelativeScale3D(FVector(0.6f, 0.6f, 0.1f));

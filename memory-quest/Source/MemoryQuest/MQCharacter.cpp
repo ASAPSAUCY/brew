@@ -46,7 +46,7 @@ AMQCharacter::AMQCharacter()
 
 	// Fixed cozy-camera: high, pitched down, never rotates with the character.
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	CameraBoom->SetupAttachment(RootComponent);
+	CameraBoom->SetupAttachment(GetRootComponent());
 	CameraBoom->TargetArmLength = 1500.f;
 	CameraBoom->SetRelativeRotation(FRotator(-52.f, 0.f, 0.f));
 	CameraBoom->bUsePawnControlRotation = false;
@@ -58,7 +58,7 @@ AMQCharacter::AMQCharacter()
 	CameraBoom->CameraLagSpeed = 8.f;
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+	FollowCamera->SetupAttachment(CameraBoom.Get(), USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
 
 	BodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BodyMesh"));

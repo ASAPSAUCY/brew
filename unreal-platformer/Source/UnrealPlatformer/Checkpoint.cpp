@@ -15,7 +15,7 @@ ACheckpoint::ACheckpoint()
 	PrimaryActorTick.bCanEverTick = false;
 
 	Trigger = CreateDefaultSubobject<UBoxComponent>(TEXT("Trigger"));
-	SetRootComponent(Trigger);
+	SetRootComponent(Trigger.Get());
 	Trigger->InitBoxExtent(FVector(60.f, 60.f, 120.f));
 	Trigger->SetMobility(EComponentMobility::Movable);
 	Trigger->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -25,7 +25,7 @@ ACheckpoint::ACheckpoint()
 	Trigger->SetGenerateOverlapEvents(true);
 
 	MarkerMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MarkerMesh"));
-	MarkerMesh->SetupAttachment(Trigger);
+	MarkerMesh->SetupAttachment(Trigger.Get());
 	MarkerMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	MarkerMesh->SetRelativeScale3D(FVector(0.4f, 0.4f, 2.4f));
 

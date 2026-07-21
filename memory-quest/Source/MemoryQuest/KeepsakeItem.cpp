@@ -13,7 +13,7 @@
 AKeepsakeItem::AKeepsakeItem()
 {
 	ItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMesh"));
-	ItemMesh->SetupAttachment(InteractionSphere);
+	ItemMesh->SetupAttachment(InteractionSphere.Get());
 	ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ItemMesh->SetRelativeLocation(FVector(0.f, 0.f, 45.f));
 	ItemMesh->SetRelativeScale3D(FVector(0.35f, 0.35f, 0.35f));

@@ -16,7 +16,7 @@
 AEscapeDoor::AEscapeDoor()
 {
 	DoorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DoorMesh"));
-	DoorMesh->SetupAttachment(InteractionSphere);
+	DoorMesh->SetupAttachment(InteractionSphere.Get());
 	DoorMesh->SetRelativeLocation(FVector(0.f, 0.f, 130.f));
 	DoorMesh->SetRelativeScale3D(FVector(2.6f, 0.35f, 2.6f));
 	// The door physically blocks the entrance until it opens.
@@ -96,13 +96,13 @@ void AEscapeDoor::Interact(AMQCharacter* Player)
 APuzzlePedestal::APuzzlePedestal()
 {
 	ColumnMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ColumnMesh"));
-	ColumnMesh->SetupAttachment(InteractionSphere);
+	ColumnMesh->SetupAttachment(InteractionSphere.Get());
 	ColumnMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ColumnMesh->SetRelativeLocation(FVector(0.f, 0.f, 45.f));
 	ColumnMesh->SetRelativeScale3D(FVector(0.5f, 0.5f, 0.9f));
 
 	OrbMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("OrbMesh"));
-	OrbMesh->SetupAttachment(InteractionSphere);
+	OrbMesh->SetupAttachment(InteractionSphere.Get());
 	OrbMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	OrbMesh->SetRelativeLocation(FVector(0.f, 0.f, 115.f));
 	OrbMesh->SetRelativeScale3D(FVector(0.4f, 0.4f, 0.4f));
@@ -185,13 +185,13 @@ void APuzzlePedestal::ResetPedestal()
 ALevelTrophy::ALevelTrophy()
 {
 	BaseMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BaseMesh"));
-	BaseMesh->SetupAttachment(InteractionSphere);
+	BaseMesh->SetupAttachment(InteractionSphere.Get());
 	BaseMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	BaseMesh->SetRelativeLocation(FVector(0.f, 0.f, 30.f));
 	BaseMesh->SetRelativeScale3D(FVector(0.6f, 0.6f, 0.6f));
 
 	CupMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CupMesh"));
-	CupMesh->SetupAttachment(InteractionSphere);
+	CupMesh->SetupAttachment(InteractionSphere.Get());
 	CupMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	CupMesh->SetRelativeLocation(FVector(0.f, 0.f, 95.f));
 	CupMesh->SetRelativeScale3D(FVector(0.5f, 0.5f, 0.5f));

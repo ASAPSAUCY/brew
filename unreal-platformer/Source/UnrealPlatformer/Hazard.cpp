@@ -17,7 +17,7 @@ AHazard::AHazard()
 	// Extent 50 = a 100-unit box, matching the engine cube so the actor's spawn
 	// scale sizes the trigger and the visual identically.
 	Trigger = CreateDefaultSubobject<UBoxComponent>(TEXT("Trigger"));
-	SetRootComponent(Trigger);
+	SetRootComponent(Trigger.Get());
 	Trigger->InitBoxExtent(FVector(50.f, 50.f, 50.f));
 	Trigger->SetMobility(EComponentMobility::Movable);
 	Trigger->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -27,7 +27,7 @@ AHazard::AHazard()
 	Trigger->SetGenerateOverlapEvents(true);
 
 	HazardMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HazardMesh"));
-	HazardMesh->SetupAttachment(Trigger);
+	HazardMesh->SetupAttachment(Trigger.Get());
 	HazardMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));

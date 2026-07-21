@@ -11,7 +11,7 @@ APlatformBlock::APlatformBlock()
 	PrimaryActorTick.bCanEverTick = false;
 
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
-	SetRootComponent(MeshComponent);
+	SetRootComponent(MeshComponent.Get());
 	// Movable so runtime spawning and subclass motion both work without baked lighting.
 	MeshComponent->SetMobility(EComponentMobility::Movable);
 
