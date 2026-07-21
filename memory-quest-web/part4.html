@@ -1,0 +1,316 @@
+<script>
+'use strict';
+// ============================================================================
+//  RENDER
+// ============================================================================
+function txt(s, x, y, size, color, align = 'left', bold = false) {
+  ctx.font = (bold ? 'bold ' : '') + size + 'px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = align; ctx.textBaseline = 'top';
+  ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillText(s, x + 1, y + 2);
+  ctx.fillStyle = color; ctx.fillText(s, x, y);
+}
+function wrap(s, maxW, size) {
+  ctx.font = size + 'px "Segoe UI", system-ui, sans-serif';
+  const words = s.split(' '), lines = []; let cur = '';
+  for (const w of words) {
+    const t = cur ? cur + ' ' + w : w;
+    if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t;
+  }
+  if (cur) lines.push(cur); return lines;
+}
+function panel(x, y, w, h, top) {
+  ctx.fillStyle = 'rgba(12,10,24,0.88)'; ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = top || '#f2c85a'; ctx.fillRect(x, y, w, 4);
+}
+function button(x, y, w, h, label, fn, hot) {
+  ctx.fillStyle = hot ? 'rgba(242,200,90,0.25)' : 'rgba(255,255,255,0.08)';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+  txt(label, x + 12, y + h / 2 - 9, 16, hot ? '#ffe9a8' : '#f0efe8');
+  uiHits.push({ x, y, w, h, fn });
+}
+function dspr(spr, x, y, s, flip, bob = 0) {
+  ctx.save();
+  ctx.globalAlpha = 0.25; ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.ellipse(x, y + 1, spr.w * s * 0.32, 2.4, 0, 0, 7); ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.drawImage(flip ? spr.flip : spr.img, Math.round(x - spr.w * s / 2), Math.round(y - spr.h * s + bob), spr.w * s, spr.h * s);
+  ctx.restore();
+}
+
+function wtxt(s, x, y, size, color) {
+  ctx.font = 'bold ' + size + 'px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillText(s, x + 0.4, y + 0.7);
+  ctx.fillStyle = color; ctx.fillText(s, x, y);
+}
+function drawWorld() {
+  const P = G.player, viewW = VW / SCALE, viewH = VH / SCALE;
+  let camx = Math.max(0, Math.min(P.x - viewW / 2, WORLD_W - viewW));
+  let camy = Math.max(0, Math.min(P.y - viewH / 2, WORLD_H - viewH));
+  if (G.shake > 0) { camx += (Math.random() - 0.5) * 5; camy += (Math.random() - 0.5) * 5; }
+  ctx.setTransform(DPR * SCALE, 0, 0, DPR * SCALE, -camx * DPR * SCALE, -camy * DPR * SCALE);
+  ctx.imageSmoothingEnabled = false;
+
+  const tx0 = Math.floor(camx / TILE), ty0 = Math.floor(camy / TILE);
+  const tx1 = Math.ceil((camx + viewW) / TILE), ty1 = Math.ceil((camy + viewH) / TILE);
+  for (let ty = ty0; ty < ty1; ty++) for (let tx = tx0; tx < tx1; tx++) {
+    ctx.fillStyle = groundColor(tx, ty); ctx.fillRect(tx * TILE, ty * TILE, TILE + 0.6, TILE + 0.6);
+  }
+
+  const items = [];
+  for (const p of props) items.push({ sortY: p.sortY, draw: p.draw });
+  DATA.keepsakes.forEach((k, i) => {
+    if (G.keeps[i]) return; const [x, y] = KEEP_POS[k.id];
+    items.push({ sortY: y, draw: () => {
+      const b = Math.sin(performance.now() / 300 + i) * 2;
+      ctx.save(); ctx.translate(x, y - 8 + b); ctx.rotate(Math.PI / 4);
+      ctx.fillStyle = KEEP_COL[k.id]; ctx.fillRect(-5, -5, 10, 10);
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.strokeRect(-5.5, -5.5, 11, 11); ctx.restore();
+      ctx.globalAlpha = 0.2; ctx.fillStyle = '#000';
+      ctx.beginPath(); ctx.ellipse(x, y + 1, 5, 2, 0, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+    }});
+  });
+  for (const c of aliveCreatures()) {
+    const spr = c.d.id === 'rumor' ? SPR.rumor : CSPR[c.d.id];
+    items.push({ sortY: c.y, draw: () => {
+      const b = Math.sin(performance.now() / 260 + c.bob) * 1.6;
+      if (c.d.id === 'rumor') ctx.globalAlpha = 0.85;
+      dspr(spr, c.x, c.y, 1.5, c.dir < 0, b);
+      ctx.globalAlpha = 1;
+      if (Math.hypot(c.x - G.player.x, c.y - G.player.y) < 70)
+        wtxt(c.d.name, c.x, c.y - spr.h * 1.5 - 12, 7, '#fff');
+    }});
+  }
+  for (const id in NPC_POS) {
+    const [x, y, sk] = NPC_POS[id], d = DATA.npcs.find(n => n.id === id);
+    items.push({ sortY: y, draw: () => {
+      dspr(SPR[sk], x, y, 1.5, x > G.player.x);
+      if (Math.hypot(x - G.player.x, y - G.player.y) < 70) wtxt(d.name, x, y - SPR[sk].h * 1.5 - 12, 7, '#fff');
+    }});
+  }
+  items.push({ sortY: G.buddy.y, draw: () => {
+    const b = Math.abs(Math.sin(performance.now() / 160)) * -1.6;
+    dspr(SPR.buddy, G.buddy.x, G.buddy.y, 1.4, G.buddy.dir < 0, G.player.moving ? b : 0);
+  }});
+  items.push({ sortY: P.y, draw: () => {
+    const b = P.moving ? Math.abs(Math.sin(P.anim)) * -2 : 0;
+    dspr(SPR.kyle, P.x, P.y, 1.5, P.dir < 0, b);
+  }});
+  if (!G.doorOpen) items.push({ sortY: DOOR.y + DOOR.h, draw: () => {
+    rr(DOOR.x, DOOR.y - 14, DOOR.w, DOOR.h + 14, '#b3202c');
+    rr(DOOR.x + DOOR.w - 8, DOOR.y - 2, 3, 3, '#f2c85a');
+    wtxt('FINAL ROOM', DOOR.x + DOOR.w / 2, DOOR.y - 24, 7, '#f2c85a');
+  }});
+  PEDESTALS.forEach((p, i) => items.push({ sortY: p.y, draw: () => {
+    rr(p.x - 5, p.y - 12, 10, 12, '#4a4258');
+    ctx.fillStyle = i < G.puzzleNext ? '#3fd96a' : p.c;
+    ctx.beginPath(); ctx.arc(p.x, p.y - 16, 5, 0, 7); ctx.fill();
+  }}));
+  if (G.puzzleSolved) items.push({ sortY: TROPHY_POS.y, draw: () => {
+    const y = TROPHY_POS.y + Math.sin(performance.now() / 300) * 1.5;
+    rr(TROPHY_POS.x - 7, y - 6, 14, 5, '#c9a038');
+    rr(TROPHY_POS.x - 5, y - 16, 10, 10, '#f2c85a');
+    rr(TROPHY_POS.x - 9, y - 16, 4, 6, '#f2c85a'); rr(TROPHY_POS.x + 5, y - 16, 4, 6, '#f2c85a');
+  }});
+  items.sort((a, b) => a.sortY - b.sortY);
+  for (const it of items) it.draw();
+}
+
+// ---- Screen-space UI -------------------------------------------------------
+function ui() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  uiHits = [];
+  const M = G.mode;
+  if (M === 'title') return drawTitle();
+
+  if (M === 'explore' || M === 'dialog') {
+    panel(VW - 240, 12, 228, 78, '#f2c85a');
+    txt('Memorydex  ' + caughtCount() + ' / ' + NC, VW - 228, 22, 15, '#ffe9a8', 'left', true);
+    txt('Keepsakes  ' + keepCount() + ' / ' + NK, VW - 228, 42, 15, '#f0efe8');
+    txt('Final Room: ' + (G.doorOpen ? 'OPEN' : unlocked() ? 'READY' : 'locked'), VW - 228, 62, 15, G.doorOpen || unlocked() ? '#7ce89a' : '#a8a8b0');
+    uiHits.push({ x: VW - 240, y: 12, w: 228, h: 78, fn: () => { G.book = true; G.mode = 'book'; } });
+    txt('Partner: ' + partyName(G.party[G.active]), VW - 228, VH - 34, 14, '#ffd6da');
+    uiHits.push({ x: VW - 240, y: VH - 40, w: 228, h: 30, fn: cyclePartner });
+    txt('WASD move · E interact · Tab scrapbook · C partner · M music', 14, VH - 28, 12, 'rgba(255,255,255,0.5)');
+  }
+  if (M === 'explore') {
+    const it = nearest();
+    if (it) {
+      const w = Math.min(VW - 40, ctx.measureText(it.prompt).width + 260);
+      panel(VW / 2 - w / 2, VH - 92, w, 40, '#7ce89a');
+      txt('E — ' + it.prompt, VW / 2, VH - 82, 16, '#f0efe8', 'center');
+    }
+  }
+  if (G.banner && (M === 'explore' || M === 'dialog')) {
+    const a = Math.min(1, G.banner.t / 0.5);
+    ctx.globalAlpha = a;
+    txt(G.banner.title, VW / 2, 54, 30, '#ffe9a8', 'center', true);
+    if (G.banner.sub) txt(G.banner.sub, VW / 2, 92, 16, '#f0efe8', 'center');
+    ctx.globalAlpha = 1;
+  }
+  if (M === 'dialog') {
+    const D = G.dialog, w = Math.min(VW - 40, 760), x = VW / 2 - w / 2, y = VH - 190;
+    panel(x, y, w, 160, '#d94a56');
+    txt(D.name, x + 18, y + 14, 18, '#ffd6da', 'left', true);
+    let ly = y + 44;
+    for (const line of wrap(D.pages[D.i], w - 36, 15)) { txt(line, x + 18, ly, 15, '#f0efe8'); ly += 21; }
+    txt('E — continue (' + (D.i + 1) + '/' + D.pages.length + ')', x + w - 18, y + 132, 12, 'rgba(255,255,255,0.55)', 'right');
+  }
+  if (M === 'battle') drawBattle();
+  if (M === 'card') drawCard();
+  if (M === 'book') drawBook();
+  if (M === 'finale') drawFinale();
+}
+
+function drawBattle() {
+  const B = G.battle;
+  ctx.fillStyle = '#0d0b16'; ctx.fillRect(0, 0, VW, VH);
+  ctx.imageSmoothingEnabled = false;
+  const wspr = CSPR[B.c.d.id], bobW = Math.sin(performance.now() / 220) * 4;
+  ctx.drawImage(wspr.img, VW * 0.62, VH * 0.10 + bobW, wspr.w * 9, wspr.h * 9);
+  const pspr = B.pE === -1 ? SPR.buddy : CSPR[DATA.creatures[B.pE].id];
+  const bobP = Math.sin(performance.now() / 260 + 2) * 3;
+  ctx.drawImage(pspr.flip, VW * 0.08, VH * 0.34 + bobP, pspr.w * 7, pspr.h * 7);
+
+  panel(VW * 0.55, 18, VW * 0.42, 66, '#f2c85a');
+  txt(B.c.d.name + ' — ' + B.c.d.species, VW * 0.55 + 14, 26, 16, '#ffe9a8', 'left', true);
+  const sw = VW * 0.42 - 28;
+  ctx.fillStyle = '#333'; ctx.fillRect(VW * 0.55 + 14, 54, sw, 12);
+  ctx.fillStyle = '#3fd96a'; ctx.fillRect(VW * 0.55 + 14, 54, sw * B.hp / B.maxHp, 12);
+
+  panel(VW * 0.03, VH * 0.30, VW * 0.34, 60, '#d94a56');
+  txt(B.pName, VW * 0.03 + 14, VH * 0.30 + 8, 16, '#ffd6da', 'left', true);
+  const pw = VW * 0.34 - 28;
+  ctx.fillStyle = '#333'; ctx.fillRect(VW * 0.03 + 14, VH * 0.30 + 36, pw, 12);
+  ctx.fillStyle = '#e85a68'; ctx.fillRect(VW * 0.03 + 14, VH * 0.30 + 36, pw * Math.max(0, B.pHp) / B.pMaxHp, 12);
+
+  let ly = VH - 320;
+  for (const line of B.log) { txt(line, 24, ly, 14, '#e8e6da'); ly += 22; }
+
+  const bx = 20, bw = VW - 40, bh = 44;
+  const opts = [
+    ['1 — ' + B.pA + '  (steady)', () => battleChoice(1)],
+    ['2 — ' + B.pB + '  (wild swing)', () => battleChoice(2)],
+    ['3 — Give it a treat  (befriend it — joins your team!)', () => battleChoice(3)],
+    ['4 — Wave goodbye', () => battleChoice(4)],
+  ];
+  opts.forEach((o, i) => button(bx, VH - 220 + i * (bh + 8), bw, bh, o[0], o[1], i === 2));
+}
+
+function drawCard() {
+  const C = G.card;
+  ctx.fillStyle = 'rgba(6,5,14,0.8)'; ctx.fillRect(0, 0, VW, VH);
+  const w = Math.min(VW - 40, 640), h = 330, x = VW / 2 - w / 2, y = VH / 2 - h / 2;
+  panel(x, y, w, h, '#f2c85a');
+  txt('A MEMORY, KEPT', VW / 2, y + 20, 12, 'rgba(255,255,255,0.5)', 'center');
+  txt(C.title, VW / 2, y + 44, 26, '#ffe9a8', 'center', true);
+  txt(C.sub, VW / 2, y + 84, 14, '#9ad4e8', 'center');
+  let ly = y + 122;
+  for (const line of wrap(C.text, w - 80, 16)) { txt(line, VW / 2, ly, 16, '#f0efe8', 'center'); ly += 24; }
+  txt('E — keep it forever', VW / 2, y + h - 34, 13, 'rgba(255,255,255,0.55)', 'center');
+}
+
+function drawBook() {
+  ctx.fillStyle = 'rgba(8,7,18,0.95)'; ctx.fillRect(0, 0, VW, VH);
+  txt('THE SCRAPBOOK', VW / 2, 24, 28, '#ffe9a8', 'center', true);
+  const lx = VW * 0.06, rx = VW * 0.55; let ly = 84;
+  txt('YOUR TEAM & MEMORYDEX', lx, ly, 15, '#9ad4e8', 'left', true); ly += 28;
+  const activeEntry = G.party[G.active];
+  const row = (label, active, caught, fn) => {
+    txt((active ? '➤ ' : '   ') + label, lx, ly, 14, active ? '#ffe9a8' : caught ? '#f0efe8' : '#6f6f7a');
+    if (fn) uiHits.push({ x: lx, y: ly - 2, w: VW * 0.42, h: 20, fn });
+    ly += 22;
+  };
+  row(DATA.buddy.name + ' — the goodest starter', activeEntry === -1, true, () => { G.active = 0; SFX.blip(); });
+  DATA.creatures.forEach((c, i) => {
+    if (G.caught[i]) {
+      const pi = G.party.indexOf(i);
+      row(c.name + ' — ' + c.title, activeEntry === i, true, c.special ? null : () => { G.active = pi; SFX.blip(); });
+    } else row('??? — somewhere in ' + c.zone, false, false, null);
+  });
+  let ry = 84;
+  txt('KEEPSAKES', rx, ry, 15, '#9ad4e8', 'left', true); ry += 28;
+  DATA.keepsakes.forEach((k, i) => {
+    txt(G.keeps[i] ? k.name + ' — ' + k.title : '??? — keep exploring', rx, ry, 14, G.keeps[i] ? '#f0efe8' : '#6f6f7a'); ry += 22;
+  });
+  ry += 16;
+  txt(G.doorOpen ? 'The Final Room is OPEN. Go finish what you started.'
+      : unlocked() ? 'The Final Room can be opened! Head to the red door.'
+      : 'The Final Room opens at ' + DATA.needCreatures + ' memories and ' + DATA.needKeepsakes + ' keepsakes.',
+      rx, ry, 14, '#ffe9a8');
+  txt('Tab — close  ·  tap a team member to make them your partner', VW / 2, VH - 36, 13, 'rgba(255,255,255,0.5)', 'center');
+}
+
+function drawFinale() {
+  ctx.fillStyle = 'rgba(8,6,16,0.97)'; ctx.fillRect(0, 0, VW, VH);
+  let y = VH * 0.12;
+  txt(DATA.finale[0], VW / 2, y, 40, '#ffe9a8', 'center', true); y += 70;
+  for (let i = 1; i < DATA.finale.length - 1; i++) {
+    for (const line of wrap(DATA.finale[i], Math.min(VW - 120, 720), 17)) { txt(line, VW / 2, y, 17, '#f0efe8', 'center'); y += 25; }
+    y += 14;
+  }
+  ctx.imageSmoothingEnabled = false;
+  const s = 4, cx = VW / 2;
+  ctx.drawImage(SPR.kyle.img, cx - 90, VH - 150, SPR.kyle.w * s, SPR.kyle.h * s);
+  ctx.drawImage(SPR.claudia.flip, cx + 20, VH - 150, SPR.claudia.w * s, SPR.claudia.h * s);
+  ctx.drawImage(SPR.buddy.img, cx - 160, VH - 120, SPR.buddy.w * 3.4, SPR.buddy.h * 3.4);
+  ctx.globalAlpha = 0.7; ctx.drawImage(SPR.rumor.img, cx + 110, VH - 120, SPR.rumor.w * 3.4, SPR.rumor.h * 3.4); ctx.globalAlpha = 1;
+  txt(DATA.finale[DATA.finale.length - 1], VW / 2, VH - 40, 13, 'rgba(255,255,255,0.55)', 'center');
+}
+
+function drawTitle() {
+  const g = ctx.createLinearGradient(0, 0, 0, VH);
+  g.addColorStop(0, '#241f3d'); g.addColorStop(1, '#0f2e33');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
+  for (let i = 0; i < 40; i++) {
+    const sx = hash2(i, 7) * VW, sy = hash2(i, 13) * VH * 0.5;
+    ctx.globalAlpha = 0.3 + 0.7 * Math.abs(Math.sin(performance.now() / 900 + i));
+    ctx.fillStyle = '#fff'; ctx.fillRect(sx, sy, 2, 2);
+  }
+  ctx.globalAlpha = 1;
+  ctx.imageSmoothingEnabled = false;
+  const s = Math.min(7, VW / 130), cx = VW / 2;
+  const b = Math.sin(performance.now() / 400) * 4;
+  ctx.drawImage(SPR.kyle.img, cx - SPR.kyle.w * s - 14, VH * 0.52 - SPR.kyle.h * s + b, SPR.kyle.w * s, SPR.kyle.h * s);
+  ctx.drawImage(SPR.claudia.flip, cx + 14, VH * 0.52 - SPR.claudia.h * s - b, SPR.claudia.w * s, SPR.claudia.h * s);
+  ctx.drawImage(SPR.buddy.img, cx - SPR.buddy.w * 2.4, VH * 0.60, SPR.buddy.w * 4.5, SPR.buddy.h * 4.5);
+  txt(DATA.title, cx, VH * 0.13, Math.min(64, VW / 9), '#ffe9a8', 'center', true);
+  txt(DATA.subtitle, cx, VH * 0.13 + Math.min(64, VW / 9) + 12, 18, '#f0efe8', 'center');
+  const bw = 240, bx = cx - bw / 2;
+  button(bx, VH * 0.74, bw, 46, hasSave() ? '      Continue' : '      New Game', () => titleStart(hasSave()));
+  if (hasSave()) button(bx, VH * 0.74 + 56, bw, 40, '      Start Over', () => { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} titleStart(false); });
+  txt('E / tap to play · M for music', cx, VH * 0.92, 13, 'rgba(255,255,255,0.5)', 'center');
+}
+
+// ============================================================================
+//  BOOT
+// ============================================================================
+function draw() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = '#1a1626'; ctx.fillRect(0, 0, VW, VH);
+  if (G.mode !== 'title') drawWorld();
+  ui();
+}
+window.__mq = {
+  G, DATA, RNG,
+  start: c => titleStart(!!c),
+  key: k => handleKey(k),
+  teleport: (x, y) => { G.player.x = x; G.player.y = y; G.buddy.x = x - 18; G.buddy.y = y + 8; G.buddyTrail.length = 0; },
+  catchN: n => { for (let i = 0; i < NC && n > 0; i++) if (!G.caught[i] && !DATA.creatures[i].special) { G.caught[i] = true; G.party.push(i); n--; } },
+  grantKeeps: n => { for (let i = 0; i < NK && n > 0; i++) if (!G.keeps[i]) { G.keeps[i] = true; n--; } },
+  nearest: () => { const it = nearest(); return it ? it.kind + ':' + it.name : null; },
+  state: () => ({ mode: G.mode, x: Math.round(G.player.x), y: Math.round(G.player.y),
+    caught: caughtCount(), keeps: keepCount(), door: G.doorOpen, next: G.puzzleNext,
+    solved: G.puzzleSolved, finale: G.finaleSeen, party: G.party.map(partyName), active: partyName(G.party[G.active]) }),
+};
+let last = 0;
+function loop(t) {
+  const dt = Math.min(0.05, (t - last) / 1000 || 0.016); last = t;
+  update(dt); draw(); requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+window.addEventListener('beforeunload', () => { if (G.mode !== 'title') save(); });
+</script>
+</body>
+</html>

@@ -206,3 +206,6 @@
 
 # Unignore the Memory Quest game project
 !/memory-quest
+
+# Unignore the Memory Quest browser edition
+!/memory-quest-web

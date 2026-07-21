@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Memory Quest — Kyle &amp; Claudia</title>
+<style>
+  html,body{margin:0;padding:0;background:#1a1626;overflow:hidden;height:100%;touch-action:none;-webkit-user-select:none;user-select:none}
+  #game{display:block;width:100vw;height:100vh;image-rendering:pixelated;image-rendering:crisp-edges}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<script>
+'use strict';
+// ============================================================================
+//  MEMORY QUEST — Kyle & Claudia · Browser Edition
+//  A cozy exploration game about four years together.
+//  Everything personal lives in DATA below — edit freely.
+// ============================================================================
+
+const DATA = {
+  title: 'MEMORY QUEST',
+  subtitle: 'Kyle & Claudia — four years in the making',
+  playerName: 'Kyle',
+  partnerName: 'Claudia',
+  buddy: { name: 'Buddy', attackA: 'Zoomies', attackB: 'Heroic Bork', hp: 90,
+    pages: [
+      "Woof! Woof woof! (Translation: I am the goodest boy currently on this quest, and we both know it.)",
+      "(Buddy would like you to know that Rumor taught him his best trick: loving Claudia.)"
+    ]},
+  needCreatures: 8, needKeepsakes: 6,
+
+  creatures: [
+    { id:'angelbat', name:'Angelbat', species:'Dark Angel of the Party', zone:'Hallow Grove',
+      title:'The Night It Started', hp:80, a:'Wing Flick', b:'Smolder',
+      text:"Halloween, six years ago. A dark angel walked into the party and Kyle forgot his own (fake) badge number. Two more years of 'just friends' followed. Slowest arrest in history." },
+    { id:'copcake', name:'Copcake', species:'Off-Duty Cupcake', zone:'Hallow Grove',
+      title:'Exhibit B', hp:70, a:'Ticket Tease', b:'Donut Roll',
+      text:"One 'sexy police officer' costume, as worn by Kyle. The handcuffs were plastic. The crush was extremely real." },
+    { id:'swish', name:'Swish', species:'Court Spirit', zone:'The Courts',
+      title:'Same Team, Every Time', hp:70, a:'Crossover', b:'Buzzer Beater',
+      text:"Mid-COVID pickup games with the crew — the weekly excuse to see each other. Somehow, mysteriously, always on the same team." },
+    { id:'chalky', name:'Chalky', species:'8-Ball Oracle', zone:'The Courts',
+      title:"Rack 'Em", hp:75, a:'Bank Shot', b:'Scratch',
+      text:"Post-basketball billiards: 'just one game' that became four years of trash talk. Chalky has witnessed every miracle shot and every excuse." },
+    { id:'flexi', name:'Flexi', species:'Gains Goblin', zone:'The Courts',
+      title:"Claudia's Era", hp:85, a:'Rep Count', b:'Protein Slap',
+      text:"Claudia's current arc: fitness. Flexi respects the grind, spots her lifts, and has formally requested that Kyle stop calling stretching 'cardio'." },
+    { id:'pidge', name:'Pidge', species:'Big City Bird', zone:'Little New York',
+      title:'The Birthday Weekend', hp:60, a:'Coo', b:'Crumb Heist',
+      text:"New York, her birthday. A city of eight million people, and they spent the whole weekend only noticing each other. (This pigeon noticed everything.)" },
+    { id:'mimossy', name:'Mimossy', species:'Brunch Spirit', zone:'Little New York',
+      title:'Bottomless, 2023', hp:90, a:'Bubbly Burst', b:'Second Round',
+      text:"Bottomless mimosas: Claudia's greatest triumph and swiftest downfall. One escape room did not survive the aftermath. The only room left unfinished... until today?" },
+    { id:'seafoodle', name:'Seafoodle', species:'The Usual', zone:'The Apartment',
+      title:"Kyle's Order", hp:65, a:'Noodle Whip', b:'Garlic Cloud',
+      text:"Seafood pasta. Every restaurant, every city, every time, forever. The waiters have stopped asking. The pasta has achieved legend status." },
+    { id:'slice', name:'Slice', species:'Picnic Guardian', zone:'Cozy Park',
+      title:'Park Picnics', hp:60, a:'Cheese Pull', b:'Crust Punch',
+      text:"One blanket, one pizza box, zero regrets. The official venue of their best ordinary afternoons." },
+    { id:'beesting', name:'BeeSting', species:'Hot Honey Bee', zone:'Cozy Park',
+      title:'The Official Pizza', hp:55, a:'Buzz', b:'Honey Drizzle',
+      text:"Bee sting pizza: hot honey, big feelings. The house pizza of this entire relationship. This bee considers itself a co-founder." },
+    { id:'bogey', name:'Bogey', species:'Golf Gremlin', zone:'Cozy Park',
+      title:"Kyle's True Rival", hp:85, a:'Shank', b:'Mulligan',
+      text:"Golf gave them long afternoons together — and gave Kyle a lifelong nemesis that lives rent-free on every scorecard. Claudia keeps the receipts." },
+    { id:'reely', name:'Reely', species:'Matinee Spirit', zone:'Cozy Park',
+      title:'Movie #400-and-Something', hp:70, a:'Plot Twist', b:'Spoiler',
+      text:"Claudia picks the movie. Kyle 'just rests his eyes' for a minute. Both of them swear they watched it. Neither of them did." },
+    { id:'poutine', name:'Poutine', species:'Gravy Elemental', zone:'Montreal Corner',
+      title:'The Montreal Getaway', hp:75, a:'Gravy Wave', b:'Squeak',
+      text:"Fall colors, old streets, fries drowned in gravy — and proof they travel well together. Claudia's French half called it 'acceptable'. That's high praise." },
+    { id:'rumor', name:'Rumor', species:'Forever Good Boy', zone:'Cozy Park', special:true,
+      title:'Rumor', hp:1, a:'', b:'',
+      text:"Claudia's best boy. He ran ahead last year, but his pawprints are on everything here. Buddy keeps his spot warm. Forever part of this story." },
+  ],
+
+  keepsakes: [
+    { id:'mask', name:'Party Mask', title:'The Costume',
+      text:"A little dark-angel mask. Some costumes you never really take off." },
+    { id:'chalk', name:'Billiard Chalk', title:'House Rules',
+      text:"Blue chalk from the hall. For when the trash talk requires precision." },
+    { id:'token', name:'Subway Token', title:'One Ride',
+      text:"A token from THE weekend. Good for one ride and everything that came after." },
+    { id:'flute', name:'Mimosa Flute', title:'It Has Seen Things',
+      text:"An empty flute from the 2023 brunch. Handle with respect. And possibly gloves." },
+    { id:'stub', name:'Movie Stub', title:'Feature Presentation',
+      text:"Ticket #400-something. Feature presentation: her head on his shoulder." },
+    { id:'scorecard', name:'Golf Scorecard', title:'The Eraser Mark',
+      text:"One scorecard, one suspicious eraser mark. Kyle denies everything. The gremlin knows." },
+    { id:'leaf', name:'Maple Leaf', title:'Red, Her Color',
+      text:"A perfect red maple leaf from Montreal. Red — her color, her season." },
+    { id:'pizzabox', name:'Pizza Box', title:'Extra Honey',
+      text:"A flattened bee sting pizza box, saved like a trophy. Extra hot honey, obviously." },
+  ],
+
+  npcs: [
+    { id:'claudia', name:'Claudia', color:'#d9152033', pages: [
+      "Four years, Kyle. From a dark angel and — I'm quoting YOU here — a 'sexy police officer' to... you built me a whole world? Okay. Okay, I'm a little impressed.",
+      "Our memories got loose, by the way. They're wandering around out there — the bee sting pizza, the pigeons, that little golf gremlin you SWEAR isn't based on you.",
+      "Catch them with Buddy, grab our keepsakes, then meet me at The Final Room. We are FINALLY finishing that escape room. I have unfinished business with that place.",
+      "And yes — he has exactly ONE joke about me: half Black, half French, palest girl in every room. It stopped being funny in year two. ...It's still a little funny.",
+      "(She grins.) I'd do all four years again. Even the mimosa thing. ESPECIALLY the mimosa thing. Now go — Buddy's ready." ]},
+    { id:'ghost', name:'Boo-Regard', color:'#b9b9e666', pages: [
+      "BOO! ...Nothing? Tough crowd. You know, I haunted a Halloween party right here, six years back. A dark angel walked in, and some cop in a VERY unregulation uniform forgot his own fake badge number.",
+      "And then they stayed 'just friends' for TWO YEARS. Two! Even ghosts move faster than that, and we are famously dead." ]},
+    { id:'hoops', name:'Hoops', color:'#e8832666', pages: [
+      "Mid-COVID, this court was the whole social calendar. Same crew every week — and those two 'just friends' somehow always ended up on the same team.",
+      "After hoops it was billiards, every time. 'Just one game.' Sure. Chalky's still holding the 8-ball from their longest argument.",
+      "Claudia's all about the gym these days. Flexi over there has watched Kyle's warm-up routine and has QUESTIONS." ]},
+    { id:'marlowe', name:'Mr. Marlowe', color:'#20307066', pages: [
+      "Welcome to Little New York. Big birthday weekend, a few years back — two 'friends' checked in... and let's just say they did not check out as friends.",
+      "He asked her properly back at his apartment, right after the trip. Good man. Terrible poker face, but a good man.",
+      "The brunch spirit by the mimosa table? Ask her about 2023. Actually — don't. We're still finding glitter." ]},
+    { id:'fern', name:'Ranger Fern', color:'#2e733266', pages: [
+      "Spring blossoms on this side, fall maples over on the Montreal Corner. Somebody's favorite seasons — both of them. The fries with gravy are for her French half. Oui oui.",
+      "Best picnic in the park: that blanket right there. Bee sting pizza and a seafood pasta, every single time. The bees have become... invested.",
+      "The quiet tree up north is Rumor's spot. Good boy earned a good view. Buddy visits when he thinks no one's looking." ]},
+    { id:'locke', name:'Ms. Locke', color:'#58267066', pages: [
+      "Welcome back to The Final Room. Ah. It's YOU two. I remember the... incident of 2023. We remember it every time it rains, actually.",
+      "New house rule, instituted in your honor: no bottomless brunch before booking. The carpet did not make it.",
+      "The door opens only for those who carry their story with them: 8 memories caught, 6 keepsakes found. Inside, press the pedestals in the order it all happened. Then finish what you started." ]},
+  ],
+
+  signs: {
+    car: "An orange supercar, top down, golden hour. One unforgettable joyride — her in his sunglasses' reflection, fall trees flying by. Sunglasses mandatory.",
+    memorial: "A small warm stone under the softest tree in the park. 'RUMOR — forever good boy.'",
+    rug: "The rug in Kyle's apartment. Right here, after New York, he finally asked. She said obviously."
+  },
+
+  puzzle: {
+    clues: [ 'A tiny pumpkin rests on this pedestal.',
+             'A tiny basketball rests on this pedestal.',
+             'A tiny yellow taxi rests on this pedestal.' ],
+    hint: 'Press them in the order the story happened.',
+    wrong: 'The room buzzes disapprovingly. Somewhere, a mimosa laughs. The pedestals reset.',
+    solved: 'Click. Clunk. The Final Room concedes. FINALLY.' },
+
+  finale: [
+    'FINISHED. FINALLY.',
+    "Four years: every slice of bee sting pizza, every 'one more game', every movie Kyle definitely watched.",
+    "Claudia — from the dark angel at that party to every picnic since: you're Kyle's favorite adventure, his best teammate, and the only escape room he never wants out of.",
+    "For Rumor. The goodest boy. Buddy's keeping your spot warm. <3",
+    'P.S. Escape room record — unfinished: 1 (mimosas). Finished: 1 (today, together).',
+    'Press E to keep exploring your little world.' ],
+};
+
+// ============================================================================
+//  PIXEL ART — every sprite is a tiny paint-by-letter map.
+//  '.' = transparent. Letters index into the sprite's palette.
+// ============================================================================
+const SPRITES = {
+  // Kyle: dark wavy hair, white tee, black shorts, white sneakers.
+  kyle: { pal:{h:'#2a1e16',s:'#c8956c',t:'#f2f2ee',p:'#22242c',w:'#fafafa',e:'#1c1c22',o:'#a86f4b'},
+    rows:[
+    '...hhhhhh...',
+    '..hhhhhhhh..',
+    '..hhhhhhhh..',
+    '..hsssssoh..',
+    '..hsessse...',
+    '...ssssss...',
+    '....ssss....',
+    '..tttttttt..',
+    '.ttttttttts.',
+    '.stttttttts.',
+    '.sttttttttt.',
+    '..tttttttt..',
+    '..pppppppp..',
+    '..pppppppp..',
+    '...pp..pp...',
+    '...ss..ss...',
+    '..ww....ww..',
+    ]},
+  // Claudia: long brown waves, pale skin, sage dress, gold necklace.
+  claudia: { pal:{h:'#5a3a24',H:'#6f4a2e',s:'#f3e3d5',d:'#b7c9a3',D:'#a3b78f',g:'#e8c04a',e:'#231a14',m:'#c4766a'},
+    rows:[
+    '...hhhhhh...',
+    '..hhhhhhhh..',
+    '.hhhhhhhhhh.',
+    '.hhssssssHh.',
+    '.hhsessessh.',
+    '.hhssssssHh.',
+    '.hh.ssss.Hh.',
+    '.hh..gg..Hh.',
+    '.hhddddddHh.',
+    '.hhddddddHh.',
+    '.hHddddddHh.',
+    '.hHDddddDHh.',
+    '..HDddddDH..',
+    '...DddddD...',
+    '...dd..dd...',
+    '...ss..ss...',
+    '...ss..ss...',
+    ]},
+  buddy: { pal:{f:'#d9a441',F:'#c08a2e',e:'#1c1c22',n:'#241d18',t:'#e6b95d'},
+    rows:[
+    '.ff......ff.',
+    '.fff....fff.',
+    '..ffffffff..',
+    '..feffffef..',
+    '..ffffffff..',
+    '...ffnnff...',
+    '....ffff.tt.',
+    '..ffffffftt.',
+    '.fffffffff..',
+    '.fFffffffF..',
+    '.fF.ffff.F..',
+    '....f..f....',
+    '...ff..ff...',
+    ]},
+  rumor: { pal:{f:'#cfe4f2',F:'#b7d2e6',e:'#5a7d99',n:'#8fb0c6',t:'#e2f0fa'},
+    rows:[
+    '.ff......ff.',
+    '.fff....fff.',
+    '..ffffffff..',
+    '..feffffef..',
+    '..ffffffff..',
+    '...ffnnff...',
+    '....ffff.tt.',
+    '..ffffffftt.',
+    '.fffffffff..',
+    '.fFffffffF..',
+    '.fF.ffff.F..',
+    '....f..f....',
+    '...ff..ff...',
+    ]},
+  ghost: { pal:{g:'#e8e8f8',G:'#cfcfe8',e:'#2a2a3e',m:'#8888aa'},
+    rows:[
+    '...gggggg...',
+    '..gggggggg..',
+    '.gggggggggg.',
+    '.ggeggggegg.',
+    '.gggggggggg.',
+    '.ggggmmgggg.',
+    '.gggggggggg.',
+    '.gGgggggGgg.',
+    '.gGgggggGgg.',
+    '.g.gg.gg.g..',
+    ]},
+  hoops: { pal:{h:'#181410',s:'#8a5a38',j:'#e8832e',J:'#c96a1a',p:'#2a2a30',w:'#f0f0f0',e:'#171310'},
+    rows:[
+    '...hhhhhh...',
+    '..hhhhhhhh..',
+    '..hsssssshh.',
+    '..hsessseh..',
+    '...ssssss...',
+    '....ssss....',
+    '..jjjjjjjj..',
+    '.sjJjjjjJjs.',
+    '.sjjjjjjjjs.',
+    '..jjjjjjjj..',
+    '..pppppppp..',
+    '...pp..pp...',
+    '..ww....ww..',
+    ]},
+  marlowe: { pal:{h:'#3a3a42',s:'#caa27e',c:'#203070',C:'#182458',g:'#e8c04a',e:'#1a1a20',w:'#101018'},
+    rows:[
+    '...cccccc...',
+    '..cccccccc..',
+    '..hsssssshh.',
+    '..hsessseh..',
+    '...ssssss...',
+    '....ssss....',
+    '..CCCCCCCC..',
+    '.sCCgCCgCCs.',
+    '.sCCCCCCCCs.',
+    '..CCCCCCCC..',
+    '..CCCCCCCC..',
+    '...ww..ww...',
+    '..ww....ww..',
+    ]},
+  fern: { pal:{h:'#6e4a26',s:'#d9b08c',g:'#2e7332',G:'#245c28',k:'#8a6a3a',e:'#221a12',w:'#4a3a20'},
+    rows:[
+    '..kkkkkkkk..',
+    '.kkkkkkkkkk.',
+    '..hsssssshh.',
+    '..hsessseh..',
+    '...ssssss...',
+    '....ssss....',
+    '..gggggggg..',
+    '.sgGggggGgs.',
+    '.sgggggggggs',
+    '..gggggggg..',
+    '..GGGGGGGG..',
+    '...ww..ww...',
+    '..ww....ww..',
+    ]},
+  locke: { pal:{h:'#2c1e33',s:'#e0bfa0',v:'#582670',V:'#461f5b',e:'#1c1420',w:'#26202c',g:'#c9a038'},
+    rows:[
+    '...hhhhhh...',
+    '..hhhhhhhh..',
+    '..hsssssshh.',
+    '..hsessseh..',
+    '...ssssss...',
+    '....ssss....',
+    '..vvvvvvvv..',
+    '.svVvgggVvs.',
+    '.svvvvvvvvs.',
+    '..vvvvvvvv..',
+    '..VVVVVVVV..',
+    '...ww..ww...',
+    '..ww....ww..',
+    ]},
+};
+
+// Creature sprites: 12x12-ish, distinct silhouettes, all with eyes.
+const CSPRITES = {
+  angelbat: { pal:{k:'#241c30',K:'#38284a',r:'#c02038',e:'#f0e6ff',p:'#241c30',h:'#e8c04a'},
+    rows:[
+    'k..........k',
+    'kk..hhhh..kk',
+    'kkk.kkkk.kkk',
+    'kkkkkkkkkkkk',
+    '.kkekkkkekk.',
+    '.kkkkkkkkkk.',
+    '..kkrkkrkk..',
+    '..kkkkkkkk..',
+    '...kkkkkk...',
+    '..kk....kk..',
+    ]},
+  copcake: { pal:{b:'#203070',B:'#182458',f:'#e8a0b8',F:'#d98aa8',c:'#f2d5a0',g:'#e8c04a',e:'#201828'},
+    rows:[
+    '...bbbbbb...',
+    '..bbbbbbbb..',
+    '...bgggb....',
+    '..ffffffff..',
+    '.ffeffffef..',
+    '.ffffffffff.',
+    '..ffFffFff..',
+    '..cccccccc..',
+    '..cccccccc..',
+    '...cccccc...',
+    ]},
+  swish: { pal:{o:'#e8832e',O:'#c96a1a',l:'#241c14',e:'#fff6e8',p:'#241c14'},
+    rows:[
+    '...oooooo...',
+    '..oolooloo..',
+    '.oooloolooo.',
+    '.llllllllll.',
+    '.oeolooloeo.',
+    '.oooloolooo.',
+    '.OoolooloOo.',
+    '..OolooloO..',
+    '...OOOOOO...',
+    ]},
+  chalky: { pal:{k:'#16161c',K:'#26262e',w:'#f2f2f2',e:'#16161c'},
+    rows:[
+    '...kkkkkk...',
+    '..kkkkkkkk..',
+    '.kkkwwwwkkk.',
+    '.kkwwwwwwkk.',
+    '.kkwwwwwwkk.',
+    '.kekkkkkkek.',
+    '.kkkkkkkkkk.',
+    '..kKkkkkKk..',
+    '...KKKKKK...',
+    ]},
+  flexi: { pal:{r:'#b32020',R:'#8f1616',s:'#9aa0ac',S:'#7a8090',e:'#fff0f0',p:'#201414'},
+    rows:[
+    'ss........ss',
+    'ss.rrrrrr.ss',
+    'ssssssssssss',
+    'ss.rrrrrr.ss',
+    'ss.rerrer.ss',
+    '...rrrrrr...',
+    '...rRrrRr...',
+    '...rrrrrr...',
+    '..rr....rr..',
+    ]},
+  pidge: { pal:{g:'#8a8f9a',G:'#6e737e',v:'#3a8a6e',e:'#fff8e8',p:'#201c14',o:'#d9a441'},
+    rows:[
+    '....gggg....',
+    '...gggggg...',
+    '...gepgg....'.replace('p','e'),
+    '..vvgggoo...',
+    '.gvvgggg....',
+    '.ggggggggg..',
+    '.GgggggggG..',
+    '..GGgggGG...',
+    '....oo.oo...',
+    ]},
+  mimossy: { pal:{o:'#f2a23a',O:'#e88a1a',y:'#f8d878',g:'#e8ecf2',e:'#402808',b:'#fff4d8'},
+    rows:[
+    '..bb.b.bb...',
+    '...yyyyyy...',
+    '..yyyyyyyy..',
+    '.yyeyyyyey..',
+    '..yyyyyyyy..',
+    '...oooooo...',
+    '....gggg....',
+    '....gggg....',
+    '...gggggg...',
+    ]},
+  seafoodle: { pal:{c:'#f2e3c8',C:'#e8d0a8',n:'#f2c078',s:'#e87a5a',e:'#3a2818'},
+    rows:[
+    '...ssssss...',
+    '..cnnnnnnc..',
+    '.cnnnnnnnnc.',
+    '.cnennnnenc.',
+    '.cnnnnnnnnc.',
+    '.Cnnsnnsnnc.',
+    '.CccccccccC.',
+    '..CCCCCCCC..',
+    ]},
+  slice: { pal:{y:'#f2c85a',Y:'#e8b03a',c:'#e8d0a8',r:'#c03028',e:'#402808'},
+    rows:[
+    '....cccc....',
+    '...cyyyyc...',
+    '..cyyryyyc..',
+    '..cyyyyyyc..',
+    '.cyeyyyyeyc.',
+    '.cyyyryyyyc.',
+    '.cyyyyyyryc.',
+    '..cyyyyyyc..',
+    '...cyyyyc...',
+    '....cyyc....',
+    ]},
+  beesting: { pal:{y:'#f2c024',k:'#241c10',w:'#e8f0f8aa',e:'#fffef0'},
+    rows:[
+    '..w......w..',
+    '.www....www.',
+    '..kkkkkkkk..',
+    '.kyyyyyyyyk.',
+    '.kyeykkyeyk.'.replace(/kk/,'yy'),
+    '.kyyyyyyyyk.',
+    '..kkkkkkkk..',
+    '.kyyyyyyyyk.',
+    '..kkkkkkkk..',
+    '.....kk.....',
+    ]},
+  bogey: { pal:{g:'#3a8a3e',G:'#2c6e30',w:'#f2f2f2',e:'#f8fff8',p:'#142014'},
+    rows:[
+    '...gggggg...',
+    '..gggggggg..',
+    '.gggwwwwggg.',
+    '.ggwewwewgg.',
+    '.gggwwwwggg.',
+    '.ggggGGgggg.',
+    '.GgggggggGG.',
+    '..GgggggggG.',
+    '...GGGGGG...',
+    '..gg....gg..',
+    ]},
+  reely: { pal:{k:'#26262e',K:'#38383e',r:'#b32020',w:'#f2f2ea',e:'#f8f8f0'},
+    rows:[
+    '...kkkkkk...',
+    '..kwkkkkwk..',
+    '.kkkkkkkkkk.',
+    '.kekkwwkkek.',
+    '.kkkkwwkkkk.',
+    '.kwkkkkkkwk.',
+    '.kkkkkkkkkk.',
+    '..krrrrrrk..',
+    '...kkkkkk...',
+    ]},
+  poutine: { pal:{b:'#a8762e',B:'#8a5c1e',f:'#f2d878',g:'#b3762e',c:'#f8f4e8',e:'#3a2810'},
+    rows:[
+    '..f.ff.f.f..',
+    '.ffffffffff.',
+    '.bcbfcfbcfb.',
+    '.bbgggggbbb.',
+    '.bbebggbebb.',
+    '.bbgggggbbb.',
+    '.bBbbbbbbBb.',
+    '..bbbbbbbb..',
+    '...BBBBBB...',
+    ]},
+};
+</script>
+<script>
+'use strict';
+// ============================================================================
+//  ENGINE CORE
+// ============================================================================
+const TILE = 16, WORLD_W = 240 * TILE, WORLD_H = 170 * TILE;
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let VW = 0, VH = 0, SCALE = 2.5, DPR = 1;
+
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  VW = window.innerWidth; VH = window.innerHeight;
+  canvas.width = Math.floor(VW * DPR); canvas.height = Math.floor(VH * DPR);
+  canvas.style.width = VW + 'px'; canvas.style.height = VH + 'px';
+  SCALE = Math.max(1.8, Math.min(3, VW / 440));
+}
+window.addEventListener('resize', resize); resize();
+
+// Deterministic tiny hash for ground texture variation.
+function hash2(x, y) { let n = x * 374761393 + y * 668265263; n = (n ^ (n >> 13)) * 1274126177; return ((n ^ (n >> 16)) >>> 0) / 4294967295; }
+
+// ---- Sprite baking ---------------------------------------------------------
+function bake(def) {
+  const rows = def.rows, h = rows.length;
+  let w = 0; for (const r of rows) w = Math.max(w, r.length);
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  for (let y = 0; y < h; y++) for (let x = 0; x < rows[y].length; x++) {
+    const ch = rows[y][x]; if (ch === '.' || ch === ' ') continue;
+    const col = def.pal[ch]; if (!col) continue;
+    g.fillStyle = col; g.fillRect(x, y, 1, 1);
+  }
+  const f = document.createElement('canvas'); f.width = w; f.height = h;
+  const fg = f.getContext('2d'); fg.translate(w, 0); fg.scale(-1, 1); fg.drawImage(c, 0, 0);
+  return { img: c, flip: f, w, h };
+}
+const SPR = {}; for (const k in SPRITES) SPR[k] = bake(SPRITES[k]);
+const CSPR = {}; for (const k in CSPRITES) CSPR[k] = bake(CSPRITES[k]);
+
+// ============================================================================
+//  WORLD — zones, ground, props, colliders
+// ============================================================================
+const px = t => t * TILE;
+const ZONES = [
+  { name: 'The Apartment', sub: 'Where he finally asked', x: px(88), y: px(60), w: px(64), h: px(50) },
+  { name: 'Hallow Grove', sub: "Where a dark angel met a 'sexy' cop", x: px(6), y: px(6), w: px(76), h: px(64) },
+  { name: 'The Courts', sub: 'Same team, every time', x: px(156), y: px(6), w: px(78), h: px(64) },
+  { name: 'Montreal Corner', sub: 'Fall colors and fries with gravy', x: px(6), y: px(96), w: px(34), h: px(34) },
+  { name: 'Cozy Park', sub: 'Picnics, putts and one very good boy', x: px(6), y: px(96), w: px(82), h: px(68) },
+  { name: 'Little New York', sub: 'The birthday weekend that changed everything', x: px(152), y: px(96), w: px(82), h: px(68) },
+];
+function zoneAt(x, y) { for (const z of ZONES) if (x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h) return z; return null; }
+
+function inRect(x, y, r) { return x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h; }
+const GROUND = [ // painted in order; later wins
+  { x: 0, y: 0, w: WORLD_W, h: WORLD_H, c: ['#5d8a4a', '#578246'] },              // base lawn
+  { x: px(6), y: px(6), w: px(76), h: px(64), c: ['#4a3d5c', '#443853'] },        // hallow grove
+  { x: px(156), y: px(6), w: px(78), h: px(64), c: ['#565b66', '#4f545e'] },      // courts asphalt
+  { x: px(6), y: px(96), w: px(82), h: px(68), c: ['#5f924c', '#5d8a4a'], cc: ['#63914e', '#5d8a4a'] }, // park (fixed below)
+  { x: px(152), y: px(96), w: px(82), h: px(68), c: ['#6a6f78', '#63676f'] },     // NYC pavement
+  { x: px(6), y: px(96), w: px(34), h: px(34), c: ['#a8703a', '#9c6834'] },       // montreal fall ground
+  { x: px(88), y: px(60), w: px(64), h: px(50), c: ['#c9b98a', '#c2b284'] },      // hub plaza
+  // paths from hub
+  { x: px(70), y: px(82), w: px(20), h: px(6), c: ['#b8a878', '#b1a172'] },
+  { x: px(150), y: px(82), w: px(20), h: px(6), c: ['#b8a878', '#b1a172'] },
+  { x: px(117), y: px(44), w: px(6), h: px(18), c: ['#b8a878', '#b1a172'] },
+  { x: px(117), y: px(108), w: px(6), h: px(18), c: ['#b8a878', '#b1a172'] },
+  { x: px(76), y: px(40), w: px(14), h: px(6), c: ['#b8a878', '#b1a172'] },
+  { x: px(150), y: px(40), w: px(14), h: px(6), c: ['#b8a878', '#b1a172'] },
+  // flat paints
+  { x: px(168), y: px(18), w: px(30), h: px(20), c: ['#b3703a', '#aa6a36'] },     // basketball court
+  { x: px(16), y: px(140), w: px(20), h: px(14), c: ['#6fae4f', '#68a54a'] },     // golf green
+  { x: px(56), y: px(126), w: 76, h: 56, c: ['#c03028', '#b52c24'] },             // picnic blanket
+];
+GROUND[3].c = ['#63914e', '#5d8a4a'];
+
+function groundColor(tx, ty) {
+  const wx = px(tx), wy = px(ty); let c = GROUND[0].c;
+  for (const r of GROUND) if (inRect(wx, wy, r)) c = r.c;
+  return c[hash2(tx, ty) > 0.5 ? 0 : 1];
+}
+
+// ---- Props -----------------------------------------------------------------
+const props = [];   // {x,y,draw,solids:[{x,y,w,h}],sortY}
+const solids = [];  // collision rects
+function addSolid(x, y, w, h) { const r = { x, y, w, h }; solids.push(r); return r; }
+function prop(x, y, drawFn, opt = {}) {
+  const p = { x, y, draw: drawFn, sortY: opt.sortY !== undefined ? opt.sortY : y };
+  props.push(p);
+  if (opt.solid) addSolid(opt.solid.x, opt.solid.y, opt.solid.w, opt.solid.h);
+  return p;
+}
+function rr(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
+
+function tree(x, y, crown, trunk = '#6b4a2a') {
+  prop(x, y, () => {
+    rr(x - 3, y - 14, 6, 16, trunk);
+    rr(x - 14, y - 34, 28, 24, crown);
+    rr(x - 10, y - 40, 20, 8, crown);
+    rr(x - 12, y - 12, 24, 4, 'rgba(0,0,0,0.12)');
+  }, { solid: { x: x - 4, y: y - 4, w: 8, h: 6 }, sortY: y });
+}
+function house(x, y, w, h, wall, roof, door, doorC) {
+  prop(x, y + h, () => {
+    rr(x, y - 18, w, 18, roof);
+    rr(x, y, w, h, wall);
+    rr(x + 8, y + 8, 12, 10, '#ffd97a'); rr(x + w - 20, y + 8, 12, 10, '#ffd97a');
+    if (door) { rr(x + w / 2 - 8, y + h - 18, 16, 18, doorC); }
+  }, { solid: { x, y: y - 6, w, h: h + 4 }, sortY: y + h });
+}
+
+// -- Hub: apartment (enterable), fountain, restaurant table, Final Room shell.
+const APT = { x: px(92), y: px(63), w: px(15), h: px(9) };
+(function apartment() {
+  const { x, y, w, h } = APT, T = 6;
+  prop(x, y + h, () => {
+    rr(x - 2, y - 10, w + 4, 8, '#2fb8b0');                       // tiffany roofline
+    rr(x, y, w, h, '#efe7d4');                                   // floor
+    rr(x + 20, y + 24, 60, 40, '#d91520');                       // the rug
+    rr(x, y, w, T, '#d8cdb2'); rr(x, y, T, h, '#d8cdb2');        // walls (drawn)
+    rr(x + w - T, y, T, h, '#d8cdb2');
+    rr(x, y + h - T, (w - 28) / 2 + 4, T, '#d8cdb2');            // front wall w/ gap
+    rr(x + w / 2 + 14, y + h - T, (w - 28) / 2, T, '#d8cdb2');
+    rr(x + w / 2 - 16, y + h - T, 6, T, '#d91520');              // red door frame
+    rr(x + w / 2 + 10, y + h - T, 6, T, '#d91520');
+  }, { sortY: y + 2 });
+  addSolid(x, y - 4, w, T);                                       // back
+  addSolid(x, y, T, h); addSolid(x + w - T, y, T, h);             // sides
+  addSolid(x, y + h - T, w / 2 - 16, T);                          // front left
+  addSolid(x + w / 2 + 14, y + h - T, w / 2 - 14, T);             // front right
+})();
+prop(px(122), px(78), () => {  // fountain
+  rr(px(122) - 18, px(78) - 12, 36, 22, '#8a8f9a');
+  rr(px(122) - 13, px(78) - 8, 26, 14, '#3f7fc4');
+  rr(px(122) - 3, px(78) - 16, 6, 10, '#a9dff5');
+}, { solid: { x: px(122) - 18, y: px(78) - 12, w: 36, h: 22 } });
+prop(px(98), px(88), () => {  // "the usual" table
+  rr(px(98) - 10, px(88) - 8, 20, 12, '#8a5c2e'); rr(px(98) - 12, px(88) - 10, 24, 4, '#f2ecd8');
+}, { solid: { x: px(98) - 10, y: px(88) - 8, w: 20, h: 12 } });
+
+// -- Final Room (hub SE): walls with a door gap; pedestals inside.
+const FR = { x: px(128), y: px(88), w: px(18), h: px(13) };
+(function finalRoom() {
+  const { x, y, w, h } = FR, T = 6;
+  prop(x, y + 2, () => {
+    rr(x - 2, y - 10, w + 4, 8, '#241f30');
+    rr(x, y, w, h, '#332b44');                                   // dark floor
+    rr(x, y, w, T, '#241f30'); rr(x, y, T, h, '#241f30'); rr(x + w - T, y, T, h, '#241f30');
+    rr(x, y + h - T, w / 2 - 14, T, '#241f30');
+    rr(x + w / 2 + 14, y + h - T, w / 2 - 14, T, '#241f30');
+  }, { sortY: y + 2 });
+  addSolid(x, y - 4, w, T);
+  addSolid(x, y, T, h); addSolid(x + w - T, y, T, h);
+  addSolid(x, y + h - T, w / 2 - 14, T);
+  addSolid(x + w / 2 + 14, y + h - T, w / 2 - 14, T);
+})();
+
+// -- Hallow Grove
+house(px(20), px(14), px(14), px(8), '#3a2e4d', '#291f38', true, '#b3541e');
+for (const [tx, ty] of [[30, 40], [52, 30], [64, 52], [18, 56], [44, 60]])
+  prop(px(tx), px(ty), () => { rr(px(tx) - 6, px(ty) - 8, 12, 10, '#d97a1e'); rr(px(tx) - 1, px(ty) - 11, 3, 4, '#3a5c2a'); },
+    { solid: { x: px(tx) - 6, y: px(ty) - 6, w: 12, h: 8 } });
+for (const [tx, ty] of [[12, 30], [40, 18], [66, 22], [70, 40], [26, 64]]) tree(px(tx), px(ty), '#3f3355');
+
+// -- Courts
+(function courts() {
+  const cx = px(168), cy = px(18), cw = px(30), chh = px(20);
+  prop(cx, cy + 1, () => {   // court lines + hoops
+    ctx.strokeStyle = '#f2ead2'; ctx.lineWidth = 2;
+    ctx.strokeRect(cx + 4, cy + 4, cw - 8, chh - 8);
+    ctx.beginPath(); ctx.arc(cx + cw / 2, cy + chh / 2, 24, 0, 7); ctx.stroke();
+  }, { sortY: cy + 1 });
+  prop(cx + cw / 2, cy - 2, () => {
+    rr(cx + cw / 2 - 2, cy - 16, 4, 16, '#e8e8e8'); rr(cx + cw / 2 - 10, cy - 24, 20, 10, '#f8f8f8'); rr(cx + cw / 2 - 5, cy - 16, 10, 4, '#e8832e');
+  }, { solid: { x: cx + cw / 2 - 4, y: cy - 8, w: 8, h: 8 } });
+  for (const bx of [px(210), px(218)])
+    prop(bx, px(46), () => { rr(bx - 12, px(46) - 10, 24, 14, '#1e6e34'); rr(bx - 14, px(46) - 12, 28, 4, '#6b4a2a'); },
+      { solid: { x: bx - 12, y: px(46) - 10, w: 24, h: 14 } });
+  prop(px(166), px(58), () => { rr(px(166) - 14, px(58) - 6, 28, 8, '#454a56'); }, // gym bench
+    { solid: { x: px(166) - 14, y: px(58) - 6, w: 28, h: 8 } });
+})();
+
+// -- Cozy Park
+for (const [tx, ty] of [[46, 104], [70, 110], [78, 132], [50, 152], [24, 158]]) tree(px(tx), px(ty), '#e8a0b8');
+tree(px(64), px(100), '#f5d5e2');                                  // Rumor's soft tree
+prop(px(66), px(104), () => { rr(px(66) - 6, px(104) - 8, 12, 10, '#9aa0ac'); rr(px(66) - 4, px(104) - 6, 8, 2, '#c9cdd6'); },
+  { solid: { x: px(66) - 6, y: px(104) - 8, w: 12, h: 10 } });     // memorial stone
+prop(px(58), px(128), () => { rr(px(58) - 5, px(128) - 5, 12, 8, '#f2c85a'); rr(px(58) - 3, px(128) - 3, 8, 4, '#c03028'); }, {}); // pizza on blanket
+prop(px(26), px(146), () => { rr(px(26) - 1, px(146) - 18, 3, 18, '#e8e8e8'); rr(px(26) + 2, px(146) - 18, 8, 5, '#d91520'); },
+  { solid: { x: px(26) - 2, y: px(146) - 4, w: 6, h: 4 } });       // golf flag
+(function theater() {
+  const tx = px(12), ty = px(122);
+  prop(tx, ty + 2, () => { rr(tx, ty - 14, 44, 26, '#26222e'); rr(tx + 4, ty - 10, 36, 18, '#f2f2ea'); },
+    { solid: { x: tx, y: ty - 8, w: 44, h: 18 } });
+  for (const [sx, sy] of [[16, 130], [20, 130], [24, 130], [16, 134], [20, 134], [24, 134]])
+    prop(px(sx), px(sy), () => rr(px(sx) - 3, px(sy) - 3, 7, 5, '#5c2a2a'), { solid: { x: px(sx) - 3, y: px(sy) - 3, w: 7, h: 5 } });
+})();
+// -- Montreal corner: fall trees + THE orange car
+for (const [tx, ty] of [[12, 104], [30, 100], [34, 120], [14, 124]]) tree(px(tx), px(ty), hash2(tx, ty) > 0.5 ? '#c9502a' : '#d9822a');
+prop(px(22), px(114), () => {
+  const x = px(22) - 22, y = px(114) - 10;
+  rr(x, y, 44, 14, '#e8641e'); rr(x + 6, y - 5, 24, 7, '#2a2530');
+  rr(x + 32, y - 3, 8, 5, '#e8641e'); rr(x + 2, y + 12, 8, 5, '#1c1c22'); rr(x + 32, y + 12, 8, 5, '#1c1c22');
+}, { solid: { x: px(22) - 22, y: px(114) - 10, w: 44, h: 16 } });  // the supercar
+
+// -- Little New York
+for (const [tx, ty, w, h, c] of [[158, 100, 12, 22, '#4d525e'], [176, 98, 10, 18, '#5a5f6b'], [218, 100, 12, 24, '#454a56'], [222, 134, 10, 18, '#565b66'], [158, 138, 10, 16, '#50555f']])
+  (function (tx, ty, w, h, c) {
+    prop(px(tx), px(ty) + px(h) / 3, () => {
+      rr(px(tx), px(ty) - 20, px(w), 20 + px(h) / 3, c);
+      for (let wy = 0; wy < 3; wy++) for (let wx = 0; wx < Math.floor(w / 3); wx++)
+        if (hash2(tx + wx * 7, ty + wy * 5) > 0.35) rr(px(tx) + 6 + wx * 24, px(ty) - 14 + wy * 14, 10, 8, '#ffd97a');
+    }, { solid: { x: px(tx), y: px(ty) - 8, w: px(w), h: px(h) / 3 + 8 }, sortY: px(ty) + px(h) / 3 });
+  })(tx, ty, w, h, c);
+for (const [tx, ty] of [[196, 118], [186, 146]])
+  prop(px(tx), px(ty), () => {
+    rr(px(tx) - 16, px(ty) - 8, 32, 12, '#f2c024'); rr(px(tx) - 8, px(ty) - 13, 16, 6, '#26222c');
+    rr(px(tx) - 14, px(ty) + 2, 6, 4, '#16161c'); rr(px(tx) + 8, px(ty) + 2, 6, 4, '#16161c');
+  }, { solid: { x: px(tx) - 16, y: px(ty) - 8, w: 32, h: 14 } });  // taxis
+prop(px(208), px(112), () => { rr(px(208) - 9, px(112) - 7, 18, 10, '#e8ecf2'); rr(px(208) - 11, px(112) - 9, 22, 4, '#d98aa8'); },
+  { solid: { x: px(208) - 9, y: px(112) - 7, w: 18, h: 10 } });    // brunch table
+
+// World border
+addSolid(-20, -20, WORLD_W + 40, 24); addSolid(-20, WORLD_H - 4, WORLD_W + 40, 24);
+addSolid(-20, -20, 24, WORLD_H + 40); addSolid(WORLD_W - 4, -20, 24, WORLD_H + 40);
+
+// ============================================================================
+//  ENTITIES
+// ============================================================================
+const CREATURE_POS = {
+  angelbat: [px(34), px(26), 60], copcake: [px(58), px(46), 60],
+  swish: [px(182), px(28), 55], chalky: [px(212), px(52), 40], flexi: [px(170), px(62), 45],
+  pidge: [px(170), px(120), 60], mimossy: [px(208), px(118), 40],
+  seafoodle: [px(102), px(92), 40],
+  slice: [px(62), px(132), 40], beesting: [px(58), px(126), 34],
+  bogey: [px(26), px(148), 45], reely: [px(20), px(132), 40],
+  poutine: [px(30), px(112), 34], rumor: [px(67), px(107), 0],
+};
+const KEEP_POS = { mask: [px(14), px(40)], chalk: [px(214), px(58)], token: [px(164), px(130)], flute: [px(212), px(108)],
+  stub: [px(28), px(128)], scorecard: [px(30), px(150)], leaf: [px(10), px(112)], pizzabox: [px(64), px(126)] };
+const KEEP_COL = { mask: '#7a2030', chalk: '#2a4fc4', token: '#c9a038', flute: '#f2d590', stub: '#e8e0c8',
+  scorecard: '#f2f2f2', leaf: '#d92a18', pizzabox: '#c9944a' };
+const NPC_POS = { claudia: [px(104), px(74), 'claudia'], ghost: [px(36), px(34), 'ghost'], hoops: [px(178), px(42), 'hoops'],
+  marlowe: [px(198), px(128), 'marlowe'], fern: [px(56), px(140), 'fern'], locke: [px(140), px(104), 'locke'] };
+const PEDESTALS = [
+  { x: FR.x + 34, y: FR.y + 42, c: '#d97a1e' },
+  { x: FR.x + FR.w / 2, y: FR.y + 32, c: '#b3541e' },
+  { x: FR.x + FR.w - 34, y: FR.y + 42, c: '#f2c024' },
+];
+const TROPHY_POS = { x: FR.x + FR.w / 2, y: FR.y + 70 };
+const DOOR = { x: FR.x + FR.w / 2 - 14, y: FR.y + FR.h - 8, w: 28, h: 10 };
+const SIGNS = [
+  { id: 'car', name: 'The Supercar', x: px(22), y: px(116) },
+  { id: 'memorial', name: "Rumor's Stone", x: px(66), y: px(106) },
+  { id: 'rug', name: 'The Rug', x: APT.x + 50, y: APT.y + 44 },
+];
+</script>
+<script>
+'use strict';
+// ============================================================================
+//  GAME STATE
+// ============================================================================
+const NC = DATA.creatures.length, NK = DATA.keepsakes.length;
+const G = {
+  mode: 'title',
+  player: { x: px(108), y: px(76), dir: 1, anim: 0, moving: false },
+  buddy: { x: px(106), y: px(78), dir: 1 },
+  buddyTrail: [],
+  caught: Array(NC).fill(false), keeps: Array(NK).fill(false),
+  party: [-1], active: 0,
+  puzzleNext: 0, puzzleSolved: false, doorOpen: false, finaleSeen: false,
+  dialog: null, card: null, battle: null, book: false,
+  banner: null, zone: null, muted: false, shake: 0,
+};
+const creatures = DATA.creatures.map((d, i) => {
+  const [cx, cy, rad] = CREATURE_POS[d.id];
+  return { i, d, x: cx, y: cy, hx: cx, hy: cy, rad, tx: cx, ty: cy, pause: Math.random() * 2, dir: 1, bob: Math.random() * 6 };
+});
+function aliveCreatures() { return creatures.filter(c => !G.caught[c.i]); }
+function caughtCount() { return G.caught.filter(Boolean).length; }
+function keepCount() { return G.keeps.filter(Boolean).length; }
+function unlocked() { return caughtCount() >= DATA.needCreatures && keepCount() >= DATA.needKeepsakes; }
+function partyName(e) { return e === -1 ? DATA.buddy.name : DATA.creatures[e].name; }
+
+// ---- Save ------------------------------------------------------------------
+const SAVE_KEY = 'memory_quest_save_v1';
+function save() {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({
+    caught: G.caught, keeps: G.keeps, party: G.party, active: G.active,
+    puzzleNext: G.puzzleNext, puzzleSolved: G.puzzleSolved, doorOpen: G.doorOpen,
+    finaleSeen: G.finaleSeen, x: G.player.x, y: G.player.y })); } catch (e) {}
+}
+function loadSave() {
+  try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (!s) return false;
+    G.caught = s.caught; G.keeps = s.keeps; G.party = s.party; G.active = s.active;
+    G.puzzleNext = s.puzzleNext; G.puzzleSolved = s.puzzleSolved; G.doorOpen = s.doorOpen;
+    G.finaleSeen = s.finaleSeen; G.player.x = s.x; G.player.y = s.y;
+    G.buddy.x = s.x - 20; G.buddy.y = s.y + 8;
+    if (G.doorOpen) { const di = solids.indexOf(doorSolid); if (di >= 0) solids.splice(di, 1); }
+    return true; } catch (e) { return false; }
+}
+function hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } }
+
+// ============================================================================
+//  AUDIO — tiny WebAudio chiptune + sfx. M toggles.
+// ============================================================================
+let AC = null, musicTimer = null;
+function audio() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } return AC; }
+function tone(f, dur, type = 'triangle', vol = 0.08, delay = 0) {
+  const ac = audio(); if (!ac || G.muted) return;
+  const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.value = f;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0005, t + dur);
+  o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur + 0.02);
+}
+const SFX = {
+  blip: () => tone(660, 0.07, 'square', 0.04),
+  page: () => tone(440, 0.06, 'square', 0.035),
+  pick: () => { tone(784, 0.1, 'triangle', 0.07); tone(1175, 0.14, 'triangle', 0.06, 0.08); },
+  hit: () => tone(180, 0.12, 'sawtooth', 0.05),
+  hurt: () => tone(120, 0.16, 'sawtooth', 0.05),
+  catchJingle: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.16, 'triangle', 0.08, i * 0.09)),
+  sad: () => { tone(330, 0.15, 'triangle', 0.06); tone(247, 0.22, 'triangle', 0.06, 0.14); },
+  unlock: () => [392, 523, 659, 784].forEach((f, i) => tone(f, 0.2, 'square', 0.05, i * 0.11)),
+  win: () => [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, 0.3, 'triangle', 0.09, i * 0.13)),
+};
+const MELODY = [392, 440, 523, 440, 392, 330, 392, 0, 523, 587, 659, 587, 523, 440, 523, 0];
+let mi = 0;
+function startMusic() {
+  if (musicTimer || !audio()) return;
+  musicTimer = setInterval(() => {
+    if (G.muted || G.mode === 'title') return;
+    const f = MELODY[mi % MELODY.length]; mi++;
+    if (f) { tone(f / 2, 0.5, 'triangle', 0.025); if (mi % 4 === 1) tone(f / 4, 0.6, 'sine', 0.03); }
+  }, 340);
+}
+
+// ============================================================================
+//  DIALOGUE / CARDS / BANNERS
+// ============================================================================
+function say(name, pages) { G.dialog = { name, pages, i: 0 }; G.mode = 'dialog'; SFX.blip(); }
+function advanceDialog() {
+  SFX.page();
+  if (++G.dialog.i >= G.dialog.pages.length) { G.dialog = null; G.mode = 'explore'; }
+}
+function showCard(title, sub, text) { G.card = { title, sub, text }; G.mode = 'card'; }
+function banner(title, sub, secs = 3.2) { G.banner = { title, sub, t: secs }; }
+
+// ============================================================================
+//  BATTLE — your partner vs a wild memory
+// ============================================================================
+const RNG = { f: () => Math.random(), forceCatch: false };
+function startBattle(c) {
+  const e = G.party[G.active];
+  const p = e === -1 ? { n: DATA.buddy.name, a: DATA.buddy.attackA, b: DATA.buddy.attackB, hp: DATA.buddy.hp }
+                     : { n: DATA.creatures[e].name, a: DATA.creatures[e].a, b: DATA.creatures[e].b, hp: DATA.creatures[e].hp };
+  G.battle = { c, hp: c.d.hp, maxHp: c.d.hp, pHp: p.hp, pMaxHp: p.hp, pName: p.n, pA: p.a, pB: p.b, pE: e,
+    log: ['A wild memory appeared: ' + c.d.name + ' — ' + c.d.species + '!', 'Go, ' + p.n + '! Wear it down, then befriend it with a treat.'] };
+  G.mode = 'battle'; SFX.blip();
+}
+function blog(s) { const l = G.battle.log; l.push(s); while (l.length > 4) l.shift(); }
+function wildTurn() {
+  const B = G.battle; if (!B) return;
+  const atk = RNG.f() < 0.5 ? B.c.d.a : B.c.d.b, dmg = 10 + Math.floor(RNG.f() * 9);
+  B.pHp -= dmg; blog(B.c.d.name + ' used ' + atk + '! ' + B.pName + ' takes ' + dmg + '.'); SFX.hurt(); G.shake = 0.25;
+  if (B.pHp <= 0) endBattle(B.pName + ' is all tuckered out! ' + B.c.d.name + ' scampers off... for now.', true);
+}
+function endBattle(line, sadSound) {
+  G.battle = null; G.mode = 'explore'; banner(line, '', 3.4); if (sadSound) SFX.sad();
+}
+function battleChoice(n) {
+  const B = G.battle; if (!B) return;
+  const D = B.c.d;
+  if (n === 1) {
+    const dmg = 18 + Math.floor(RNG.f() * 13); B.hp = Math.max(1, B.hp - dmg);
+    blog(B.pName + ' used ' + B.pA + '! ' + D.name + "'s spirit drops by " + dmg + '.'); SFX.hit(); G.shake = 0.2;
+    if (B.hp === 1) blog(D.name + ' is all tired out! Treat time!');
+    wildTurn();
+  } else if (n === 2) {
+    const dmg = 6 + Math.floor(RNG.f() * 39); B.hp = Math.max(1, B.hp - dmg);
+    blog(dmg < 14 ? B.pName + ' used ' + B.pB + '... it kind of whiffed. ' + dmg + ' spirit.'
+                  : B.pName + ' used ' + B.pB + '! Huge! ' + D.name + "'s spirit drops by " + dmg + '.');
+    SFX.hit(); G.shake = 0.3;
+    if (B.hp === 1) blog(D.name + ' is all tired out! Treat time!');
+    wildTurn();
+  } else if (n === 3) {
+    let chance = Math.min(0.2 + 0.6 * (1 - B.hp / B.maxHp), 0.92); if (RNG.forceCatch) chance = 1;
+    if (RNG.f() < chance) {
+      G.caught[B.c.i] = true; G.party.push(B.c.i); SFX.catchJingle();
+      const wasLocked = !G.doorOpen && unlocked();
+      G.battle = null;
+      showCard(D.title, D.name + ' — ' + D.species + ' — joined your team!', D.text);
+      if (wasLocked) banner('The Final Room can be opened!', 'Claudia is waiting.', 4);
+      save();
+    } else { blog(D.name + ' wriggles free of the treat! So dramatic.'); wildTurn(); }
+  } else if (n === 4) endBattle('You wave goodbye. ' + D.name + ' waves back. Probably.', false);
+}
+function cyclePartner() {
+  if (G.mode !== 'explore') return;
+  G.active = (G.active + 1) % G.party.length; SFX.blip();
+  banner('Partner: ' + partyName(G.party[G.active]) + '!', G.party.length === 1 ? 'Catch more memories to grow the team' : '', 2.2);
+}
+
+// ============================================================================
+//  INTERACTION
+// ============================================================================
+function interactables() {
+  const list = [];
+  for (const id in NPC_POS) { const [x, y] = NPC_POS[id]; const d = DATA.npcs.find(n => n.id === id);
+    list.push({ kind: 'npc', x, y, name: d.name, prompt: 'Talk to ' + d.name, d }); }
+  list.push({ kind: 'buddy', x: G.buddy.x, y: G.buddy.y, name: 'Buddy', prompt: 'Pet Buddy' });
+  for (const c of aliveCreatures())
+    list.push(c.d.special ? { kind: 'rumor', x: c.x, y: c.y, name: 'Rumor', prompt: 'Sit with Rumor for a moment', c }
+                          : { kind: 'creature', x: c.x, y: c.y, name: c.d.name, prompt: 'Say hi to ' + c.d.name + ' (wild memory!)', c });
+  DATA.keepsakes.forEach((k, i) => { if (!G.keeps[i]) { const [x, y] = KEEP_POS[k.id];
+    list.push({ kind: 'keep', x, y, name: k.name, prompt: 'Pick up the ' + k.name, i, k }); } });
+  for (const s of SIGNS) list.push({ kind: 'sign', x: s.x, y: s.y, name: s.name, prompt: 'Look at ' + s.name.toLowerCase(), s });
+  if (!G.doorOpen)
+    list.push({ kind: 'door', x: DOOR.x + DOOR.w / 2, y: DOOR.y + 16, name: 'The Final Room',
+      prompt: unlocked() ? "Open The Final Room. It's time." : 'Locked — memories ' + caughtCount() + '/' + DATA.needCreatures + ', keepsakes ' + keepCount() + '/' + DATA.needKeepsakes });
+  if (G.doorOpen && !G.puzzleSolved)
+    PEDESTALS.forEach((p, i) => list.push({ kind: 'ped', x: p.x, y: p.y, name: 'Pedestal',
+      prompt: (i < G.puzzleNext ? 'Pressed. ' : 'Press the pedestal. ') + DATA.puzzle.clues[i], i }));
+  if (G.puzzleSolved && !G.finaleSeen)
+    list.push({ kind: 'trophy', x: TROPHY_POS.x, y: TROPHY_POS.y, name: 'Four Years & Counting', prompt: 'Finish what you started' });
+  return list;
+}
+function nearest() {
+  let best = null, bd = 44;
+  for (const it of interactables()) {
+    let d = Math.hypot(it.x - G.player.x, it.y - G.player.y);
+    if (it.kind === 'buddy') d += 20; // Buddy yields: he is ALWAYS underfoot
+    if (d < bd) { bd = d; best = it; }
+  }
+  return best;
+}
+function doInteract() {
+  const it = nearest(); if (!it) return;
+  if (it.kind === 'npc') say(it.d.name, it.d.pages);
+  else if (it.kind === 'buddy') say(DATA.buddy.name, DATA.buddy.pages);
+  else if (it.kind === 'creature') startBattle(it.c);
+  else if (it.kind === 'rumor') { G.caught[it.c.i] = true; SFX.catchJingle();
+    showCard(it.c.d.title, it.c.d.name + ' — ' + it.c.d.species, it.c.d.text); save(); }
+  else if (it.kind === 'keep') { G.keeps[it.i] = true; SFX.pick();
+    const wasLocked = !G.doorOpen && unlocked();
+    showCard(it.k.title, 'Keepsake — ' + it.k.name, it.k.text);
+    if (wasLocked) banner('The Final Room can be opened!', 'Claudia is waiting.', 4);
+    save(); }
+  else if (it.kind === 'sign') say(it.name, [DATA.signs[it.s.id]]);
+  else if (it.kind === 'door') {
+    if (unlocked()) { G.doorOpen = true; SFX.unlock(); banner('The Final Room', "No mimosas this time. You've got this.", 3.5);
+      const di = solids.indexOf(doorSolid); if (di >= 0) solids.splice(di, 1); save(); }
+    else say('The Final Room', ["The door doesn't budge. It wants more of your story first: " + caughtCount() + '/' + DATA.needCreatures + ' memories, ' + keepCount() + '/' + DATA.needKeepsakes + ' keepsakes.',
+      '(A faint smell of mimosa drifts under the door. Judging you.)']);
+  }
+  else if (it.kind === 'ped') {
+    if (it.i === G.puzzleNext) { G.puzzleNext++; SFX.pick();
+      if (G.puzzleNext >= 3) { G.puzzleSolved = true; SFX.unlock(); banner(DATA.puzzle.solved, '', 4); }
+      save();
+    } else if (it.i > G.puzzleNext) { G.puzzleNext = 0; SFX.sad(); say('The Final Room', [DATA.puzzle.wrong, DATA.puzzle.hint]); save(); }
+  }
+  else if (it.kind === 'trophy') { G.mode = 'finale'; G.finaleSeen = true; SFX.win(); save(); }
+}
+const doorSolid = addSolid(DOOR.x, DOOR.y, DOOR.w, DOOR.h);
+
+// ============================================================================
+//  INPUT — keyboard + touch
+// ============================================================================
+const keys = {};
+window.addEventListener('keydown', e => {
+  if (e.key === 'Tab') e.preventDefault();
+  if (e.repeat) return;
+  keys[e.key.toLowerCase()] = true;
+  handleKey(e.key.toLowerCase());
+});
+window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+function handleKey(k) {
+  startMusic();
+  if (k === 'm') { G.muted = !G.muted; return; }
+  if (G.mode === 'title') { if (k === 'e' || k === 'enter' || k === ' ') titleStart(hasSave()); return; }
+  if (G.mode === 'dialog') { if (k === 'e' || k === 'enter' || k === ' ') advanceDialog(); return; }
+  if (G.mode === 'card') { if (k === 'e' || k === 'enter' || k === ' ') { G.card = null; G.mode = 'explore'; } return; }
+  if (G.mode === 'finale') { if (k === 'e' || k === 'enter') { G.mode = 'explore'; banner('Thanks for playing', 'Made with love (and one mimosa joke)', 4); } return; }
+  if (G.mode === 'book') { if (k === 'tab' || k === 'b' || k === 'e') { G.book = false; G.mode = 'explore'; } if (k === 'c') { G.mode = 'explore'; cyclePartner(); G.mode = 'book'; } return; }
+  if (G.mode === 'battle') { if (k >= '1' && k <= '4') battleChoice(+k); return; }
+  if (G.mode === 'explore') {
+    if (k === 'e' || k === 'enter') doInteract();
+    else if (k === 'tab' || k === 'b') { G.book = true; G.mode = 'book'; }
+    else if (k === 'c') cyclePartner();
+  }
+}
+// Touch: left half = joystick, right = context button; UI hit rects.
+const touch = { stick: null, dx: 0, dy: 0 };
+let uiHits = [];
+canvas.addEventListener('pointerdown', e => {
+  startMusic();
+  const x = e.clientX, y = e.clientY;
+  for (const h of uiHits) if (x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h) { h.fn(); return; }
+  if (G.mode === 'title') { titleStart(hasSave()); return; }
+  if (G.mode === 'dialog') { advanceDialog(); return; }
+  if (G.mode === 'card') { G.card = null; G.mode = 'explore'; return; }
+  if (G.mode === 'finale') { G.mode = 'explore'; banner('Thanks for playing', 'Made with love (and one mimosa joke)', 4); return; }
+  if (G.mode === 'book') { G.book = false; G.mode = 'explore'; return; }
+  if (G.mode === 'explore') {
+    if (x < VW * 0.45) { touch.stick = { x, y, id: e.pointerId }; }
+    else doInteract();
+  }
+});
+canvas.addEventListener('pointermove', e => {
+  if (touch.stick && e.pointerId === touch.stick.id) {
+    const dx = e.clientX - touch.stick.x, dy = e.clientY - touch.stick.y, m = Math.hypot(dx, dy);
+    if (m > 8) { touch.dx = dx / m; touch.dy = dy / m; } else { touch.dx = 0; touch.dy = 0; }
+  }
+});
+window.addEventListener('pointerup', e => { if (touch.stick && e.pointerId === touch.stick.id) { touch.stick = null; touch.dx = 0; touch.dy = 0; } });
+
+function titleStart(cont) {
+  if (cont) loadSave();
+  G.mode = 'explore'; startMusic();
+  banner(DATA.title, DATA.subtitle, 4.5);
+}
+
+// ============================================================================
+//  UPDATE
+// ============================================================================
+function collide(x, y) {
+  const r = { x: x - 6, y: y - 4, w: 12, h: 8 };
+  for (const s of solids) if (r.x < s.x + s.w && r.x + r.w > s.x && r.y < s.y + s.h && r.y + r.h > s.y) return true;
+  return false;
+}
+function update(dt) {
+  if (G.banner) { G.banner.t -= dt; if (G.banner.t <= 0) G.banner = null; }
+  G.shake = Math.max(0, G.shake - dt);
+  if (G.mode !== 'explore' && G.mode !== 'dialog') return;
+
+  const P = G.player;
+  let mx = 0, my = 0;
+  if (G.mode === 'explore') {
+    if (keys['w'] || keys['arrowup']) my -= 1;
+    if (keys['s'] || keys['arrowdown']) my += 1;
+    if (keys['a'] || keys['arrowleft']) mx -= 1;
+    if (keys['d'] || keys['arrowright']) mx += 1;
+    mx += touch.dx; my += touch.dy;
+  }
+  const m = Math.hypot(mx, my);
+  P.moving = m > 0.2;
+  if (P.moving) {
+    mx /= m; my /= m;
+    const sp = 105 * dt;
+    if (!collide(P.x + mx * sp, P.y)) P.x += mx * sp;
+    if (!collide(P.x, P.y + my * sp)) P.y += my * sp;
+    if (Math.abs(mx) > 0.1) P.dir = mx > 0 ? 1 : -1;
+    P.anim += dt * 10;
+    G.buddyTrail.push({ x: P.x, y: P.y });
+    if (G.buddyTrail.length > 22) G.buddyTrail.shift();
+  }
+  // Buddy follows the trail.
+  const target = G.buddyTrail[0] || { x: P.x - 20, y: P.y + 8 };
+  const bdx = target.x - G.buddy.x, bdy = target.y - G.buddy.y, bm = Math.hypot(bdx, bdy);
+  if (bm > 14) { G.buddy.x += bdx / bm * Math.min(130 * dt, bm); G.buddy.y += bdy / bm * Math.min(130 * dt, bm);
+    if (Math.abs(bdx) > 2) G.buddy.dir = bdx > 0 ? 1 : -1; }
+
+  // Creatures wander.
+  for (const c of aliveCreatures()) {
+    if (c.d.special || !c.rad) continue;
+    if (c.pause > 0) { c.pause -= dt; continue; }
+    const dx = c.tx - c.x, dy = c.ty - c.y, d = Math.hypot(dx, dy);
+    if (d < 4) { c.pause = 1 + RNG.f() * 2; c.tx = c.hx + (RNG.f() * 2 - 1) * c.rad; c.ty = c.hy + (RNG.f() * 2 - 1) * c.rad; }
+    else { const sp = Math.min(28 * dt, d); c.x += dx / d * sp; c.y += dy / d * sp; if (Math.abs(dx) > 1) c.dir = dx > 0 ? 1 : -1; }
+  }
+  // Zone banner.
+  if (G.mode === 'explore') {
+    const z = zoneAt(P.x, P.y);
+    if (z && z !== G.zone) { G.zone = z; banner(z.name, z.sub, 3); }
+  }
+}
+</script>
+<script>
+'use strict';
+// ============================================================================
+//  RENDER
+// ============================================================================
+function txt(s, x, y, size, color, align = 'left', bold = false) {
+  ctx.font = (bold ? 'bold ' : '') + size + 'px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = align; ctx.textBaseline = 'top';
+  ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillText(s, x + 1, y + 2);
+  ctx.fillStyle = color; ctx.fillText(s, x, y);
+}
+function wrap(s, maxW, size) {
+  ctx.font = size + 'px "Segoe UI", system-ui, sans-serif';
+  const words = s.split(' '), lines = []; let cur = '';
+  for (const w of words) {
+    const t = cur ? cur + ' ' + w : w;
+    if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t;
+  }
+  if (cur) lines.push(cur); return lines;
+}
+function panel(x, y, w, h, top) {
+  ctx.fillStyle = 'rgba(12,10,24,0.88)'; ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = top || '#f2c85a'; ctx.fillRect(x, y, w, 4);
+}
+function button(x, y, w, h, label, fn, hot) {
+  ctx.fillStyle = hot ? 'rgba(242,200,90,0.25)' : 'rgba(255,255,255,0.08)';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+  txt(label, x + 12, y + h / 2 - 9, 16, hot ? '#ffe9a8' : '#f0efe8');
+  uiHits.push({ x, y, w, h, fn });
+}
+function dspr(spr, x, y, s, flip, bob = 0) {
+  ctx.save();
+  ctx.globalAlpha = 0.25; ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.ellipse(x, y + 1, spr.w * s * 0.32, 2.4, 0, 0, 7); ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.drawImage(flip ? spr.flip : spr.img, Math.round(x - spr.w * s / 2), Math.round(y - spr.h * s + bob), spr.w * s, spr.h * s);
+  ctx.restore();
+}
+
+function wtxt(s, x, y, size, color) {
+  ctx.font = 'bold ' + size + 'px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillText(s, x + 0.4, y + 0.7);
+  ctx.fillStyle = color; ctx.fillText(s, x, y);
+}
+function drawWorld() {
+  const P = G.player, viewW = VW / SCALE, viewH = VH / SCALE;
+  let camx = Math.max(0, Math.min(P.x - viewW / 2, WORLD_W - viewW));
+  let camy = Math.max(0, Math.min(P.y - viewH / 2, WORLD_H - viewH));
+  if (G.shake > 0) { camx += (Math.random() - 0.5) * 5; camy += (Math.random() - 0.5) * 5; }
+  ctx.setTransform(DPR * SCALE, 0, 0, DPR * SCALE, -camx * DPR * SCALE, -camy * DPR * SCALE);
+  ctx.imageSmoothingEnabled = false;
+
+  const tx0 = Math.floor(camx / TILE), ty0 = Math.floor(camy / TILE);
+  const tx1 = Math.ceil((camx + viewW) / TILE), ty1 = Math.ceil((camy + viewH) / TILE);
+  for (let ty = ty0; ty < ty1; ty++) for (let tx = tx0; tx < tx1; tx++) {
+    ctx.fillStyle = groundColor(tx, ty); ctx.fillRect(tx * TILE, ty * TILE, TILE + 0.6, TILE + 0.6);
+  }
+
+  const items = [];
+  for (const p of props) items.push({ sortY: p.sortY, draw: p.draw });
+  DATA.keepsakes.forEach((k, i) => {
+    if (G.keeps[i]) return; const [x, y] = KEEP_POS[k.id];
+    items.push({ sortY: y, draw: () => {
+      const b = Math.sin(performance.now() / 300 + i) * 2;
+      ctx.save(); ctx.translate(x, y - 8 + b); ctx.rotate(Math.PI / 4);
+      ctx.fillStyle = KEEP_COL[k.id]; ctx.fillRect(-5, -5, 10, 10);
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.strokeRect(-5.5, -5.5, 11, 11); ctx.restore();
+      ctx.globalAlpha = 0.2; ctx.fillStyle = '#000';
+      ctx.beginPath(); ctx.ellipse(x, y + 1, 5, 2, 0, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+    }});
+  });
+  for (const c of aliveCreatures()) {
+    const spr = c.d.id === 'rumor' ? SPR.rumor : CSPR[c.d.id];
+    items.push({ sortY: c.y, draw: () => {
+      const b = Math.sin(performance.now() / 260 + c.bob) * 1.6;
+      if (c.d.id === 'rumor') ctx.globalAlpha = 0.85;
+      dspr(spr, c.x, c.y, 1.5, c.dir < 0, b);
+      ctx.globalAlpha = 1;
+      if (Math.hypot(c.x - G.player.x, c.y - G.player.y) < 70)
+        wtxt(c.d.name, c.x, c.y - spr.h * 1.5 - 12, 7, '#fff');
+    }});
+  }
+  for (const id in NPC_POS) {
+    const [x, y, sk] = NPC_POS[id], d = DATA.npcs.find(n => n.id === id);
+    items.push({ sortY: y, draw: () => {
+      dspr(SPR[sk], x, y, 1.5, x > G.player.x);
+      if (Math.hypot(x - G.player.x, y - G.player.y) < 70) wtxt(d.name, x, y - SPR[sk].h * 1.5 - 12, 7, '#fff');
+    }});
+  }
+  items.push({ sortY: G.buddy.y, draw: () => {
+    const b = Math.abs(Math.sin(performance.now() / 160)) * -1.6;
+    dspr(SPR.buddy, G.buddy.x, G.buddy.y, 1.4, G.buddy.dir < 0, G.player.moving ? b : 0);
+  }});
+  items.push({ sortY: P.y, draw: () => {
+    const b = P.moving ? Math.abs(Math.sin(P.anim)) * -2 : 0;
+    dspr(SPR.kyle, P.x, P.y, 1.5, P.dir < 0, b);
+  }});
+  if (!G.doorOpen) items.push({ sortY: DOOR.y + DOOR.h, draw: () => {
+    rr(DOOR.x, DOOR.y - 14, DOOR.w, DOOR.h + 14, '#b3202c');
+    rr(DOOR.x + DOOR.w - 8, DOOR.y - 2, 3, 3, '#f2c85a');
+    wtxt('FINAL ROOM', DOOR.x + DOOR.w / 2, DOOR.y - 24, 7, '#f2c85a');
+  }});
+  PEDESTALS.forEach((p, i) => items.push({ sortY: p.y, draw: () => {
+    rr(p.x - 5, p.y - 12, 10, 12, '#4a4258');
+    ctx.fillStyle = i < G.puzzleNext ? '#3fd96a' : p.c;
+    ctx.beginPath(); ctx.arc(p.x, p.y - 16, 5, 0, 7); ctx.fill();
+  }}));
+  if (G.puzzleSolved) items.push({ sortY: TROPHY_POS.y, draw: () => {
+    const y = TROPHY_POS.y + Math.sin(performance.now() / 300) * 1.5;
+    rr(TROPHY_POS.x - 7, y - 6, 14, 5, '#c9a038');
+    rr(TROPHY_POS.x - 5, y - 16, 10, 10, '#f2c85a');
+    rr(TROPHY_POS.x - 9, y - 16, 4, 6, '#f2c85a'); rr(TROPHY_POS.x + 5, y - 16, 4, 6, '#f2c85a');
+  }});
+  items.sort((a, b) => a.sortY - b.sortY);
+  for (const it of items) it.draw();
+}
+
+// ---- Screen-space UI -------------------------------------------------------
+function ui() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  uiHits = [];
+  const M = G.mode;
+  if (M === 'title') return drawTitle();
+
+  if (M === 'explore' || M === 'dialog') {
+    panel(VW - 240, 12, 228, 78, '#f2c85a');
+    txt('Memorydex  ' + caughtCount() + ' / ' + NC, VW - 228, 22, 15, '#ffe9a8', 'left', true);
+    txt('Keepsakes  ' + keepCount() + ' / ' + NK, VW - 228, 42, 15, '#f0efe8');
+    txt('Final Room: ' + (G.doorOpen ? 'OPEN' : unlocked() ? 'READY' : 'locked'), VW - 228, 62, 15, G.doorOpen || unlocked() ? '#7ce89a' : '#a8a8b0');
+    uiHits.push({ x: VW - 240, y: 12, w: 228, h: 78, fn: () => { G.book = true; G.mode = 'book'; } });
+    txt('Partner: ' + partyName(G.party[G.active]), VW - 228, VH - 34, 14, '#ffd6da');
+    uiHits.push({ x: VW - 240, y: VH - 40, w: 228, h: 30, fn: cyclePartner });
+    txt('WASD move · E interact · Tab scrapbook · C partner · M music', 14, VH - 28, 12, 'rgba(255,255,255,0.5)');
+  }
+  if (M === 'explore') {
+    const it = nearest();
+    if (it) {
+      const w = Math.min(VW - 40, ctx.measureText(it.prompt).width + 260);
+      panel(VW / 2 - w / 2, VH - 92, w, 40, '#7ce89a');
+      txt('E — ' + it.prompt, VW / 2, VH - 82, 16, '#f0efe8', 'center');
+    }
+  }
+  if (G.banner && (M === 'explore' || M === 'dialog')) {
+    const a = Math.min(1, G.banner.t / 0.5);
+    ctx.globalAlpha = a;
+    txt(G.banner.title, VW / 2, 54, 30, '#ffe9a8', 'center', true);
+    if (G.banner.sub) txt(G.banner.sub, VW / 2, 92, 16, '#f0efe8', 'center');
+    ctx.globalAlpha = 1;
+  }
+  if (M === 'dialog') {
+    const D = G.dialog, w = Math.min(VW - 40, 760), x = VW / 2 - w / 2, y = VH - 190;
+    panel(x, y, w, 160, '#d94a56');
+    txt(D.name, x + 18, y + 14, 18, '#ffd6da', 'left', true);
+    let ly = y + 44;
+    for (const line of wrap(D.pages[D.i], w - 36, 15)) { txt(line, x + 18, ly, 15, '#f0efe8'); ly += 21; }
+    txt('E — continue (' + (D.i + 1) + '/' + D.pages.length + ')', x + w - 18, y + 132, 12, 'rgba(255,255,255,0.55)', 'right');
+  }
+  if (M === 'battle') drawBattle();
+  if (M === 'card') drawCard();
+  if (M === 'book') drawBook();
+  if (M === 'finale') drawFinale();
+}
+
+function drawBattle() {
+  const B = G.battle;
+  ctx.fillStyle = '#0d0b16'; ctx.fillRect(0, 0, VW, VH);
+  ctx.imageSmoothingEnabled = false;
+  const wspr = CSPR[B.c.d.id], bobW = Math.sin(performance.now() / 220) * 4;
+  ctx.drawImage(wspr.img, VW * 0.62, VH * 0.10 + bobW, wspr.w * 9, wspr.h * 9);
+  const pspr = B.pE === -1 ? SPR.buddy : CSPR[DATA.creatures[B.pE].id];
+  const bobP = Math.sin(performance.now() / 260 + 2) * 3;
+  ctx.drawImage(pspr.flip, VW * 0.08, VH * 0.34 + bobP, pspr.w * 7, pspr.h * 7);
+
+  panel(VW * 0.55, 18, VW * 0.42, 66, '#f2c85a');
+  txt(B.c.d.name + ' — ' + B.c.d.species, VW * 0.55 + 14, 26, 16, '#ffe9a8', 'left', true);
+  const sw = VW * 0.42 - 28;
+  ctx.fillStyle = '#333'; ctx.fillRect(VW * 0.55 + 14, 54, sw, 12);
+  ctx.fillStyle = '#3fd96a'; ctx.fillRect(VW * 0.55 + 14, 54, sw * B.hp / B.maxHp, 12);
+
+  panel(VW * 0.03, VH * 0.30, VW * 0.34, 60, '#d94a56');
+  txt(B.pName, VW * 0.03 + 14, VH * 0.30 + 8, 16, '#ffd6da', 'left', true);
+  const pw = VW * 0.34 - 28;
+  ctx.fillStyle = '#333'; ctx.fillRect(VW * 0.03 + 14, VH * 0.30 + 36, pw, 12);
+  ctx.fillStyle = '#e85a68'; ctx.fillRect(VW * 0.03 + 14, VH * 0.30 + 36, pw * Math.max(0, B.pHp) / B.pMaxHp, 12);
+
+  let ly = VH - 320;
+  for (const line of B.log) { txt(line, 24, ly, 14, '#e8e6da'); ly += 22; }
+
+  const bx = 20, bw = VW - 40, bh = 44;
+  const opts = [
+    ['1 — ' + B.pA + '  (steady)', () => battleChoice(1)],
+    ['2 — ' + B.pB + '  (wild swing)', () => battleChoice(2)],
+    ['3 — Give it a treat  (befriend it — joins your team!)', () => battleChoice(3)],
+    ['4 — Wave goodbye', () => battleChoice(4)],
+  ];
+  opts.forEach((o, i) => button(bx, VH - 220 + i * (bh + 8), bw, bh, o[0], o[1], i === 2));
+}
+
+function drawCard() {
+  const C = G.card;
+  ctx.fillStyle = 'rgba(6,5,14,0.8)'; ctx.fillRect(0, 0, VW, VH);
+  const w = Math.min(VW - 40, 640), h = 330, x = VW / 2 - w / 2, y = VH / 2 - h / 2;
+  panel(x, y, w, h, '#f2c85a');
+  txt('A MEMORY, KEPT', VW / 2, y + 20, 12, 'rgba(255,255,255,0.5)', 'center');
+  txt(C.title, VW / 2, y + 44, 26, '#ffe9a8', 'center', true);
+  txt(C.sub, VW / 2, y + 84, 14, '#9ad4e8', 'center');
+  let ly = y + 122;
+  for (const line of wrap(C.text, w - 80, 16)) { txt(line, VW / 2, ly, 16, '#f0efe8', 'center'); ly += 24; }
+  txt('E — keep it forever', VW / 2, y + h - 34, 13, 'rgba(255,255,255,0.55)', 'center');
+}
+
+function drawBook() {
+  ctx.fillStyle = 'rgba(8,7,18,0.95)'; ctx.fillRect(0, 0, VW, VH);
+  txt('THE SCRAPBOOK', VW / 2, 24, 28, '#ffe9a8', 'center', true);
+  const lx = VW * 0.06, rx = VW * 0.55; let ly = 84;
+  txt('YOUR TEAM & MEMORYDEX', lx, ly, 15, '#9ad4e8', 'left', true); ly += 28;
+  const activeEntry = G.party[G.active];
+  const row = (label, active, caught, fn) => {
+    txt((active ? '➤ ' : '   ') + label, lx, ly, 14, active ? '#ffe9a8' : caught ? '#f0efe8' : '#6f6f7a');
+    if (fn) uiHits.push({ x: lx, y: ly - 2, w: VW * 0.42, h: 20, fn });
+    ly += 22;
+  };
+  row(DATA.buddy.name + ' — the goodest starter', activeEntry === -1, true, () => { G.active = 0; SFX.blip(); });
+  DATA.creatures.forEach((c, i) => {
+    if (G.caught[i]) {
+      const pi = G.party.indexOf(i);
+      row(c.name + ' — ' + c.title, activeEntry === i, true, c.special ? null : () => { G.active = pi; SFX.blip(); });
+    } else row('??? — somewhere in ' + c.zone, false, false, null);
+  });
+  let ry = 84;
+  txt('KEEPSAKES', rx, ry, 15, '#9ad4e8', 'left', true); ry += 28;
+  DATA.keepsakes.forEach((k, i) => {
+    txt(G.keeps[i] ? k.name + ' — ' + k.title : '??? — keep exploring', rx, ry, 14, G.keeps[i] ? '#f0efe8' : '#6f6f7a'); ry += 22;
+  });
+  ry += 16;
+  txt(G.doorOpen ? 'The Final Room is OPEN. Go finish what you started.'
+      : unlocked() ? 'The Final Room can be opened! Head to the red door.'
+      : 'The Final Room opens at ' + DATA.needCreatures + ' memories and ' + DATA.needKeepsakes + ' keepsakes.',
+      rx, ry, 14, '#ffe9a8');
+  txt('Tab — close  ·  tap a team member to make them your partner', VW / 2, VH - 36, 13, 'rgba(255,255,255,0.5)', 'center');
+}
+
+function drawFinale() {
+  ctx.fillStyle = 'rgba(8,6,16,0.97)'; ctx.fillRect(0, 0, VW, VH);
+  let y = VH * 0.12;
+  txt(DATA.finale[0], VW / 2, y, 40, '#ffe9a8', 'center', true); y += 70;
+  for (let i = 1; i < DATA.finale.length - 1; i++) {
+    for (const line of wrap(DATA.finale[i], Math.min(VW - 120, 720), 17)) { txt(line, VW / 2, y, 17, '#f0efe8', 'center'); y += 25; }
+    y += 14;
+  }
+  ctx.imageSmoothingEnabled = false;
+  const s = 4, cx = VW / 2;
+  ctx.drawImage(SPR.kyle.img, cx - 90, VH - 150, SPR.kyle.w * s, SPR.kyle.h * s);
+  ctx.drawImage(SPR.claudia.flip, cx + 20, VH - 150, SPR.claudia.w * s, SPR.claudia.h * s);
+  ctx.drawImage(SPR.buddy.img, cx - 160, VH - 120, SPR.buddy.w * 3.4, SPR.buddy.h * 3.4);
+  ctx.globalAlpha = 0.7; ctx.drawImage(SPR.rumor.img, cx + 110, VH - 120, SPR.rumor.w * 3.4, SPR.rumor.h * 3.4); ctx.globalAlpha = 1;
+  txt(DATA.finale[DATA.finale.length - 1], VW / 2, VH - 40, 13, 'rgba(255,255,255,0.55)', 'center');
+}
+
+function drawTitle() {
+  const g = ctx.createLinearGradient(0, 0, 0, VH);
+  g.addColorStop(0, '#241f3d'); g.addColorStop(1, '#0f2e33');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
+  for (let i = 0; i < 40; i++) {
+    const sx = hash2(i, 7) * VW, sy = hash2(i, 13) * VH * 0.5;
+    ctx.globalAlpha = 0.3 + 0.7 * Math.abs(Math.sin(performance.now() / 900 + i));
+    ctx.fillStyle = '#fff'; ctx.fillRect(sx, sy, 2, 2);
+  }
+  ctx.globalAlpha = 1;
+  ctx.imageSmoothingEnabled = false;
+  const s = Math.min(7, VW / 130), cx = VW / 2;
+  const b = Math.sin(performance.now() / 400) * 4;
+  ctx.drawImage(SPR.kyle.img, cx - SPR.kyle.w * s - 14, VH * 0.52 - SPR.kyle.h * s + b, SPR.kyle.w * s, SPR.kyle.h * s);
+  ctx.drawImage(SPR.claudia.flip, cx + 14, VH * 0.52 - SPR.claudia.h * s - b, SPR.claudia.w * s, SPR.claudia.h * s);
+  ctx.drawImage(SPR.buddy.img, cx - SPR.buddy.w * 2.4, VH * 0.60, SPR.buddy.w * 4.5, SPR.buddy.h * 4.5);
+  txt(DATA.title, cx, VH * 0.13, Math.min(64, VW / 9), '#ffe9a8', 'center', true);
+  txt(DATA.subtitle, cx, VH * 0.13 + Math.min(64, VW / 9) + 12, 18, '#f0efe8', 'center');
+  const bw = 240, bx = cx - bw / 2;
+  button(bx, VH * 0.74, bw, 46, hasSave() ? '      Continue' : '      New Game', () => titleStart(hasSave()));
+  if (hasSave()) button(bx, VH * 0.74 + 56, bw, 40, '      Start Over', () => { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} titleStart(false); });
+  txt('E / tap to play · M for music', cx, VH * 0.92, 13, 'rgba(255,255,255,0.5)', 'center');
+}
+
+// ============================================================================
+//  BOOT
+// ============================================================================
+function draw() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = '#1a1626'; ctx.fillRect(0, 0, VW, VH);
+  if (G.mode !== 'title') drawWorld();
+  ui();
+}
+window.__mq = {
+  G, DATA, RNG,
+  start: c => titleStart(!!c),
+  key: k => handleKey(k),
+  teleport: (x, y) => { G.player.x = x; G.player.y = y; G.buddy.x = x - 18; G.buddy.y = y + 8; G.buddyTrail.length = 0; },
+  catchN: n => { for (let i = 0; i < NC && n > 0; i++) if (!G.caught[i] && !DATA.creatures[i].special) { G.caught[i] = true; G.party.push(i); n--; } },
+  grantKeeps: n => { for (let i = 0; i < NK && n > 0; i++) if (!G.keeps[i]) { G.keeps[i] = true; n--; } },
+  nearest: () => { const it = nearest(); return it ? it.kind + ':' + it.name : null; },
+  state: () => ({ mode: G.mode, x: Math.round(G.player.x), y: Math.round(G.player.y),
+    caught: caughtCount(), keeps: keepCount(), door: G.doorOpen, next: G.puzzleNext,
+    solved: G.puzzleSolved, finale: G.finaleSeen, party: G.party.map(partyName), active: partyName(G.party[G.active]) }),
+};
+let last = 0;
+function loop(t) {
+  const dt = Math.min(0.05, (t - last) / 1000 || 0.016); last = t;
+  update(dt); draw(); requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+window.addEventListener('beforeunload', () => { if (G.mode !== 'title') save(); });
+</script>
+</body>
+</html>

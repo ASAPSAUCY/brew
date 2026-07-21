@@ -1,0 +1,258 @@
+<script>
+'use strict';
+// ============================================================================
+//  ENGINE CORE
+// ============================================================================
+const TILE = 16, WORLD_W = 240 * TILE, WORLD_H = 170 * TILE;
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let VW = 0, VH = 0, SCALE = 2.5, DPR = 1;
+
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  VW = window.innerWidth; VH = window.innerHeight;
+  canvas.width = Math.floor(VW * DPR); canvas.height = Math.floor(VH * DPR);
+  canvas.style.width = VW + 'px'; canvas.style.height = VH + 'px';
+  SCALE = Math.max(1.8, Math.min(3, VW / 440));
+}
+window.addEventListener('resize', resize); resize();
+
+// Deterministic tiny hash for ground texture variation.
+function hash2(x, y) { let n = x * 374761393 + y * 668265263; n = (n ^ (n >> 13)) * 1274126177; return ((n ^ (n >> 16)) >>> 0) / 4294967295; }
+
+// ---- Sprite baking ---------------------------------------------------------
+function bake(def) {
+  const rows = def.rows, h = rows.length;
+  let w = 0; for (const r of rows) w = Math.max(w, r.length);
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  for (let y = 0; y < h; y++) for (let x = 0; x < rows[y].length; x++) {
+    const ch = rows[y][x]; if (ch === '.' || ch === ' ') continue;
+    const col = def.pal[ch]; if (!col) continue;
+    g.fillStyle = col; g.fillRect(x, y, 1, 1);
+  }
+  const f = document.createElement('canvas'); f.width = w; f.height = h;
+  const fg = f.getContext('2d'); fg.translate(w, 0); fg.scale(-1, 1); fg.drawImage(c, 0, 0);
+  return { img: c, flip: f, w, h };
+}
+const SPR = {}; for (const k in SPRITES) SPR[k] = bake(SPRITES[k]);
+const CSPR = {}; for (const k in CSPRITES) CSPR[k] = bake(CSPRITES[k]);
+
+// ============================================================================
+//  WORLD — zones, ground, props, colliders
+// ============================================================================
+const px = t => t * TILE;
+const ZONES = [
+  { name: 'The Apartment', sub: 'Where he finally asked', x: px(88), y: px(60), w: px(64), h: px(50) },
+  { name: 'Hallow Grove', sub: "Where a dark angel met a 'sexy' cop", x: px(6), y: px(6), w: px(76), h: px(64) },
+  { name: 'The Courts', sub: 'Same team, every time', x: px(156), y: px(6), w: px(78), h: px(64) },
+  { name: 'Montreal Corner', sub: 'Fall colors and fries with gravy', x: px(6), y: px(96), w: px(34), h: px(34) },
+  { name: 'Cozy Park', sub: 'Picnics, putts and one very good boy', x: px(6), y: px(96), w: px(82), h: px(68) },
+  { name: 'Little New York', sub: 'The birthday weekend that changed everything', x: px(152), y: px(96), w: px(82), h: px(68) },
+];
+function zoneAt(x, y) { for (const z of ZONES) if (x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h) return z; return null; }
+
+function inRect(x, y, r) { return x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h; }
+const GROUND = [ // painted in order; later wins
+  { x: 0, y: 0, w: WORLD_W, h: WORLD_H, c: ['#5d8a4a', '#578246'] },              // base lawn
+  { x: px(6), y: px(6), w: px(76), h: px(64), c: ['#4a3d5c', '#443853'] },        // hallow grove
+  { x: px(156), y: px(6), w: px(78), h: px(64), c: ['#565b66', '#4f545e'] },      // courts asphalt
+  { x: px(6), y: px(96), w: px(82), h: px(68), c: ['#5f924c', '#5d8a4a'], cc: ['#63914e', '#5d8a4a'] }, // park (fixed below)
+  { x: px(152), y: px(96), w: px(82), h: px(68), c: ['#6a6f78', '#63676f'] },     // NYC pavement
+  { x: px(6), y: px(96), w: px(34), h: px(34), c: ['#a8703a', '#9c6834'] },       // montreal fall ground
+  { x: px(88), y: px(60), w: px(64), h: px(50), c: ['#c9b98a', '#c2b284'] },      // hub plaza
+  // paths from hub
+  { x: px(70), y: px(82), w: px(20), h: px(6), c: ['#b8a878', '#b1a172'] },
+  { x: px(150), y: px(82), w: px(20), h: px(6), c: ['#b8a878', '#b1a172'] },
+  { x: px(117), y: px(44), w: px(6), h: px(18), c: ['#b8a878', '#b1a172'] },
+  { x: px(117), y: px(108), w: px(6), h: px(18), c: ['#b8a878', '#b1a172'] },
+  { x: px(76), y: px(40), w: px(14), h: px(6), c: ['#b8a878', '#b1a172'] },
+  { x: px(150), y: px(40), w: px(14), h: px(6), c: ['#b8a878', '#b1a172'] },
+  // flat paints
+  { x: px(168), y: px(18), w: px(30), h: px(20), c: ['#b3703a', '#aa6a36'] },     // basketball court
+  { x: px(16), y: px(140), w: px(20), h: px(14), c: ['#6fae4f', '#68a54a'] },     // golf green
+  { x: px(56), y: px(126), w: 76, h: 56, c: ['#c03028', '#b52c24'] },             // picnic blanket
+];
+GROUND[3].c = ['#63914e', '#5d8a4a'];
+
+function groundColor(tx, ty) {
+  const wx = px(tx), wy = px(ty); let c = GROUND[0].c;
+  for (const r of GROUND) if (inRect(wx, wy, r)) c = r.c;
+  return c[hash2(tx, ty) > 0.5 ? 0 : 1];
+}
+
+// ---- Props -----------------------------------------------------------------
+const props = [];   // {x,y,draw,solids:[{x,y,w,h}],sortY}
+const solids = [];  // collision rects
+function addSolid(x, y, w, h) { const r = { x, y, w, h }; solids.push(r); return r; }
+function prop(x, y, drawFn, opt = {}) {
+  const p = { x, y, draw: drawFn, sortY: opt.sortY !== undefined ? opt.sortY : y };
+  props.push(p);
+  if (opt.solid) addSolid(opt.solid.x, opt.solid.y, opt.solid.w, opt.solid.h);
+  return p;
+}
+function rr(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
+
+function tree(x, y, crown, trunk = '#6b4a2a') {
+  prop(x, y, () => {
+    rr(x - 3, y - 14, 6, 16, trunk);
+    rr(x - 14, y - 34, 28, 24, crown);
+    rr(x - 10, y - 40, 20, 8, crown);
+    rr(x - 12, y - 12, 24, 4, 'rgba(0,0,0,0.12)');
+  }, { solid: { x: x - 4, y: y - 4, w: 8, h: 6 }, sortY: y });
+}
+function house(x, y, w, h, wall, roof, door, doorC) {
+  prop(x, y + h, () => {
+    rr(x, y - 18, w, 18, roof);
+    rr(x, y, w, h, wall);
+    rr(x + 8, y + 8, 12, 10, '#ffd97a'); rr(x + w - 20, y + 8, 12, 10, '#ffd97a');
+    if (door) { rr(x + w / 2 - 8, y + h - 18, 16, 18, doorC); }
+  }, { solid: { x, y: y - 6, w, h: h + 4 }, sortY: y + h });
+}
+
+// -- Hub: apartment (enterable), fountain, restaurant table, Final Room shell.
+const APT = { x: px(92), y: px(63), w: px(15), h: px(9) };
+(function apartment() {
+  const { x, y, w, h } = APT, T = 6;
+  prop(x, y + h, () => {
+    rr(x - 2, y - 10, w + 4, 8, '#2fb8b0');                       // tiffany roofline
+    rr(x, y, w, h, '#efe7d4');                                   // floor
+    rr(x + 20, y + 24, 60, 40, '#d91520');                       // the rug
+    rr(x, y, w, T, '#d8cdb2'); rr(x, y, T, h, '#d8cdb2');        // walls (drawn)
+    rr(x + w - T, y, T, h, '#d8cdb2');
+    rr(x, y + h - T, (w - 28) / 2 + 4, T, '#d8cdb2');            // front wall w/ gap
+    rr(x + w / 2 + 14, y + h - T, (w - 28) / 2, T, '#d8cdb2');
+    rr(x + w / 2 - 16, y + h - T, 6, T, '#d91520');              // red door frame
+    rr(x + w / 2 + 10, y + h - T, 6, T, '#d91520');
+  }, { sortY: y + 2 });
+  addSolid(x, y - 4, w, T);                                       // back
+  addSolid(x, y, T, h); addSolid(x + w - T, y, T, h);             // sides
+  addSolid(x, y + h - T, w / 2 - 16, T);                          // front left
+  addSolid(x + w / 2 + 14, y + h - T, w / 2 - 14, T);             // front right
+})();
+prop(px(122), px(78), () => {  // fountain
+  rr(px(122) - 18, px(78) - 12, 36, 22, '#8a8f9a');
+  rr(px(122) - 13, px(78) - 8, 26, 14, '#3f7fc4');
+  rr(px(122) - 3, px(78) - 16, 6, 10, '#a9dff5');
+}, { solid: { x: px(122) - 18, y: px(78) - 12, w: 36, h: 22 } });
+prop(px(98), px(88), () => {  // "the usual" table
+  rr(px(98) - 10, px(88) - 8, 20, 12, '#8a5c2e'); rr(px(98) - 12, px(88) - 10, 24, 4, '#f2ecd8');
+}, { solid: { x: px(98) - 10, y: px(88) - 8, w: 20, h: 12 } });
+
+// -- Final Room (hub SE): walls with a door gap; pedestals inside.
+const FR = { x: px(128), y: px(88), w: px(18), h: px(13) };
+(function finalRoom() {
+  const { x, y, w, h } = FR, T = 6;
+  prop(x, y + 2, () => {
+    rr(x - 2, y - 10, w + 4, 8, '#241f30');
+    rr(x, y, w, h, '#332b44');                                   // dark floor
+    rr(x, y, w, T, '#241f30'); rr(x, y, T, h, '#241f30'); rr(x + w - T, y, T, h, '#241f30');
+    rr(x, y + h - T, w / 2 - 14, T, '#241f30');
+    rr(x + w / 2 + 14, y + h - T, w / 2 - 14, T, '#241f30');
+  }, { sortY: y + 2 });
+  addSolid(x, y - 4, w, T);
+  addSolid(x, y, T, h); addSolid(x + w - T, y, T, h);
+  addSolid(x, y + h - T, w / 2 - 14, T);
+  addSolid(x + w / 2 + 14, y + h - T, w / 2 - 14, T);
+})();
+
+// -- Hallow Grove
+house(px(20), px(14), px(14), px(8), '#3a2e4d', '#291f38', true, '#b3541e');
+for (const [tx, ty] of [[30, 40], [52, 30], [64, 52], [18, 56], [44, 60]])
+  prop(px(tx), px(ty), () => { rr(px(tx) - 6, px(ty) - 8, 12, 10, '#d97a1e'); rr(px(tx) - 1, px(ty) - 11, 3, 4, '#3a5c2a'); },
+    { solid: { x: px(tx) - 6, y: px(ty) - 6, w: 12, h: 8 } });
+for (const [tx, ty] of [[12, 30], [40, 18], [66, 22], [70, 40], [26, 64]]) tree(px(tx), px(ty), '#3f3355');
+
+// -- Courts
+(function courts() {
+  const cx = px(168), cy = px(18), cw = px(30), chh = px(20);
+  prop(cx, cy + 1, () => {   // court lines + hoops
+    ctx.strokeStyle = '#f2ead2'; ctx.lineWidth = 2;
+    ctx.strokeRect(cx + 4, cy + 4, cw - 8, chh - 8);
+    ctx.beginPath(); ctx.arc(cx + cw / 2, cy + chh / 2, 24, 0, 7); ctx.stroke();
+  }, { sortY: cy + 1 });
+  prop(cx + cw / 2, cy - 2, () => {
+    rr(cx + cw / 2 - 2, cy - 16, 4, 16, '#e8e8e8'); rr(cx + cw / 2 - 10, cy - 24, 20, 10, '#f8f8f8'); rr(cx + cw / 2 - 5, cy - 16, 10, 4, '#e8832e');
+  }, { solid: { x: cx + cw / 2 - 4, y: cy - 8, w: 8, h: 8 } });
+  for (const bx of [px(210), px(218)])
+    prop(bx, px(46), () => { rr(bx - 12, px(46) - 10, 24, 14, '#1e6e34'); rr(bx - 14, px(46) - 12, 28, 4, '#6b4a2a'); },
+      { solid: { x: bx - 12, y: px(46) - 10, w: 24, h: 14 } });
+  prop(px(166), px(58), () => { rr(px(166) - 14, px(58) - 6, 28, 8, '#454a56'); }, // gym bench
+    { solid: { x: px(166) - 14, y: px(58) - 6, w: 28, h: 8 } });
+})();
+
+// -- Cozy Park
+for (const [tx, ty] of [[46, 104], [70, 110], [78, 132], [50, 152], [24, 158]]) tree(px(tx), px(ty), '#e8a0b8');
+tree(px(64), px(100), '#f5d5e2');                                  // Rumor's soft tree
+prop(px(66), px(104), () => { rr(px(66) - 6, px(104) - 8, 12, 10, '#9aa0ac'); rr(px(66) - 4, px(104) - 6, 8, 2, '#c9cdd6'); },
+  { solid: { x: px(66) - 6, y: px(104) - 8, w: 12, h: 10 } });     // memorial stone
+prop(px(58), px(128), () => { rr(px(58) - 5, px(128) - 5, 12, 8, '#f2c85a'); rr(px(58) - 3, px(128) - 3, 8, 4, '#c03028'); }, {}); // pizza on blanket
+prop(px(26), px(146), () => { rr(px(26) - 1, px(146) - 18, 3, 18, '#e8e8e8'); rr(px(26) + 2, px(146) - 18, 8, 5, '#d91520'); },
+  { solid: { x: px(26) - 2, y: px(146) - 4, w: 6, h: 4 } });       // golf flag
+(function theater() {
+  const tx = px(12), ty = px(122);
+  prop(tx, ty + 2, () => { rr(tx, ty - 14, 44, 26, '#26222e'); rr(tx + 4, ty - 10, 36, 18, '#f2f2ea'); },
+    { solid: { x: tx, y: ty - 8, w: 44, h: 18 } });
+  for (const [sx, sy] of [[16, 130], [20, 130], [24, 130], [16, 134], [20, 134], [24, 134]])
+    prop(px(sx), px(sy), () => rr(px(sx) - 3, px(sy) - 3, 7, 5, '#5c2a2a'), { solid: { x: px(sx) - 3, y: px(sy) - 3, w: 7, h: 5 } });
+})();
+// -- Montreal corner: fall trees + THE orange car
+for (const [tx, ty] of [[12, 104], [30, 100], [34, 120], [14, 124]]) tree(px(tx), px(ty), hash2(tx, ty) > 0.5 ? '#c9502a' : '#d9822a');
+prop(px(22), px(114), () => {
+  const x = px(22) - 22, y = px(114) - 10;
+  rr(x, y, 44, 14, '#e8641e'); rr(x + 6, y - 5, 24, 7, '#2a2530');
+  rr(x + 32, y - 3, 8, 5, '#e8641e'); rr(x + 2, y + 12, 8, 5, '#1c1c22'); rr(x + 32, y + 12, 8, 5, '#1c1c22');
+}, { solid: { x: px(22) - 22, y: px(114) - 10, w: 44, h: 16 } });  // the supercar
+
+// -- Little New York
+for (const [tx, ty, w, h, c] of [[158, 100, 12, 22, '#4d525e'], [176, 98, 10, 18, '#5a5f6b'], [218, 100, 12, 24, '#454a56'], [222, 134, 10, 18, '#565b66'], [158, 138, 10, 16, '#50555f']])
+  (function (tx, ty, w, h, c) {
+    prop(px(tx), px(ty) + px(h) / 3, () => {
+      rr(px(tx), px(ty) - 20, px(w), 20 + px(h) / 3, c);
+      for (let wy = 0; wy < 3; wy++) for (let wx = 0; wx < Math.floor(w / 3); wx++)
+        if (hash2(tx + wx * 7, ty + wy * 5) > 0.35) rr(px(tx) + 6 + wx * 24, px(ty) - 14 + wy * 14, 10, 8, '#ffd97a');
+    }, { solid: { x: px(tx), y: px(ty) - 8, w: px(w), h: px(h) / 3 + 8 }, sortY: px(ty) + px(h) / 3 });
+  })(tx, ty, w, h, c);
+for (const [tx, ty] of [[196, 118], [186, 146]])
+  prop(px(tx), px(ty), () => {
+    rr(px(tx) - 16, px(ty) - 8, 32, 12, '#f2c024'); rr(px(tx) - 8, px(ty) - 13, 16, 6, '#26222c');
+    rr(px(tx) - 14, px(ty) + 2, 6, 4, '#16161c'); rr(px(tx) + 8, px(ty) + 2, 6, 4, '#16161c');
+  }, { solid: { x: px(tx) - 16, y: px(ty) - 8, w: 32, h: 14 } });  // taxis
+prop(px(208), px(112), () => { rr(px(208) - 9, px(112) - 7, 18, 10, '#e8ecf2'); rr(px(208) - 11, px(112) - 9, 22, 4, '#d98aa8'); },
+  { solid: { x: px(208) - 9, y: px(112) - 7, w: 18, h: 10 } });    // brunch table
+
+// World border
+addSolid(-20, -20, WORLD_W + 40, 24); addSolid(-20, WORLD_H - 4, WORLD_W + 40, 24);
+addSolid(-20, -20, 24, WORLD_H + 40); addSolid(WORLD_W - 4, -20, 24, WORLD_H + 40);
+
+// ============================================================================
+//  ENTITIES
+// ============================================================================
+const CREATURE_POS = {
+  angelbat: [px(34), px(26), 60], copcake: [px(58), px(46), 60],
+  swish: [px(182), px(28), 55], chalky: [px(212), px(52), 40], flexi: [px(170), px(62), 45],
+  pidge: [px(170), px(120), 60], mimossy: [px(208), px(118), 40],
+  seafoodle: [px(102), px(92), 40],
+  slice: [px(62), px(132), 40], beesting: [px(58), px(126), 34],
+  bogey: [px(26), px(148), 45], reely: [px(20), px(132), 40],
+  poutine: [px(30), px(112), 34], rumor: [px(67), px(107), 0],
+};
+const KEEP_POS = { mask: [px(14), px(40)], chalk: [px(214), px(58)], token: [px(164), px(130)], flute: [px(212), px(108)],
+  stub: [px(28), px(128)], scorecard: [px(30), px(150)], leaf: [px(10), px(112)], pizzabox: [px(64), px(126)] };
+const KEEP_COL = { mask: '#7a2030', chalk: '#2a4fc4', token: '#c9a038', flute: '#f2d590', stub: '#e8e0c8',
+  scorecard: '#f2f2f2', leaf: '#d92a18', pizzabox: '#c9944a' };
+const NPC_POS = { claudia: [px(104), px(74), 'claudia'], ghost: [px(36), px(34), 'ghost'], hoops: [px(178), px(42), 'hoops'],
+  marlowe: [px(198), px(128), 'marlowe'], fern: [px(56), px(140), 'fern'], locke: [px(140), px(104), 'locke'] };
+const PEDESTALS = [
+  { x: FR.x + 34, y: FR.y + 42, c: '#d97a1e' },
+  { x: FR.x + FR.w / 2, y: FR.y + 32, c: '#b3541e' },
+  { x: FR.x + FR.w - 34, y: FR.y + 42, c: '#f2c024' },
+];
+const TROPHY_POS = { x: FR.x + FR.w / 2, y: FR.y + 70 };
+const DOOR = { x: FR.x + FR.w / 2 - 14, y: FR.y + FR.h - 8, w: 28, h: 10 };
+const SIGNS = [
+  { id: 'car', name: 'The Supercar', x: px(22), y: px(116) },
+  { id: 'memorial', name: "Rumor's Stone", x: px(66), y: px(106) },
+  { id: 'rug', name: 'The Rug', x: APT.x + 50, y: APT.y + 44 },
+];
+</script>
