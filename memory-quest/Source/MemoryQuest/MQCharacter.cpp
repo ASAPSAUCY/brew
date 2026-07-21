@@ -86,6 +86,29 @@ AMQCharacter::AMQCharacter()
 	}
 
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> BaseMaterial(TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
+
+	auto MakeFacePart = [this](const TCHAR* Name, const FVector& Location, float Scale) -> UStaticMeshComponent*
+	{
+		UStaticMeshComponent* Part = CreateDefaultSubobject<UStaticMeshComponent>(Name);
+		Part->SetupAttachment(HeadMesh.Get());
+		Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Part->SetRelativeLocation(Location);
+		Part->SetRelativeScale3D(FVector(Scale, Scale, Scale));
+		if (SphereMesh.Succeeded())
+		{
+			Part->SetStaticMesh(SphereMesh.Object);
+		}
+		if (BaseMaterial.Succeeded())
+		{
+			Part->SetMaterial(0, BaseMaterial.Object);
+		}
+		return Part;
+	};
+	LeftEye = MakeFacePart(TEXT("LeftEye"), FVector(44.f, -20.f, 6.f), 0.24f);
+	RightEye = MakeFacePart(TEXT("RightEye"), FVector(44.f, 20.f, 6.f), 0.24f);
+	LeftPupil = MakeFacePart(TEXT("LeftPupil"), FVector(52.f, -20.f, 6.f), 0.12f);
+	RightPupil = MakeFacePart(TEXT("RightPupil"), FVector(52.f, 20.f, 6.f), 0.12f);
+
 	if (BaseMaterial.Succeeded())
 	{
 		BodyMesh->SetMaterial(0, BaseMaterial.Object);
@@ -104,6 +127,21 @@ void AMQCharacter::BeginPlay()
 	if (UMaterialInstanceDynamic* HeadMaterial = HeadMesh->CreateDynamicMaterialInstance(0))
 	{
 		HeadMaterial->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.92f, 0.76f, 0.60f));
+	}
+
+	for (UStaticMeshComponent* Eye : { LeftEye.Get(), RightEye.Get() })
+	{
+		if (UMaterialInstanceDynamic* Material = Eye->CreateDynamicMaterialInstance(0))
+		{
+			Material->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.97f, 0.97f, 0.95f));
+		}
+	}
+	for (UStaticMeshComponent* Pupil : { LeftPupil.Get(), RightPupil.Get() })
+	{
+		if (UMaterialInstanceDynamic* Material = Pupil->CreateDynamicMaterialInstance(0))
+		{
+			Material->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.04f, 0.04f, 0.05f));
+		}
 	}
 }
 
@@ -132,6 +170,7 @@ void AMQCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		EnhancedInput->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 		EnhancedInput->BindAction(InteractAction, ETriggerEvent::Started, this, &AMQCharacter::OnInteract);
 		EnhancedInput->BindAction(JournalAction, ETriggerEvent::Started, this, &AMQCharacter::OnJournal);
+		EnhancedInput->BindAction(PartnerAction, ETriggerEvent::Started, this, &AMQCharacter::OnPartner);
 		EnhancedInput->BindAction(Choice1Action, ETriggerEvent::Started, this, &AMQCharacter::OnChoice1);
 		EnhancedInput->BindAction(Choice2Action, ETriggerEvent::Started, this, &AMQCharacter::OnChoice2);
 		EnhancedInput->BindAction(Choice3Action, ETriggerEvent::Started, this, &AMQCharacter::OnChoice3);
@@ -147,6 +186,7 @@ void AMQCharacter::InitializeInputObjects()
 	JumpAction = NewObject<UInputAction>(this, TEXT("IA_Jump"));
 	InteractAction = NewObject<UInputAction>(this, TEXT("IA_Interact"));
 	JournalAction = NewObject<UInputAction>(this, TEXT("IA_Journal"));
+	PartnerAction = NewObject<UInputAction>(this, TEXT("IA_Partner"));
 	Choice1Action = NewObject<UInputAction>(this, TEXT("IA_Choice1"));
 	Choice2Action = NewObject<UInputAction>(this, TEXT("IA_Choice2"));
 	Choice3Action = NewObject<UInputAction>(this, TEXT("IA_Choice3"));
@@ -179,6 +219,8 @@ void AMQCharacter::InitializeInputObjects()
 	DefaultMappingContext->MapKey(InteractAction, EKeys::Gamepad_FaceButton_Left);
 
 	DefaultMappingContext->MapKey(JournalAction, EKeys::Tab);
+	DefaultMappingContext->MapKey(PartnerAction, EKeys::C);
+	DefaultMappingContext->MapKey(PartnerAction, EKeys::Gamepad_RightShoulder);
 	DefaultMappingContext->MapKey(JournalAction, EKeys::Gamepad_FaceButton_Top);
 
 	DefaultMappingContext->MapKey(Choice1Action, EKeys::One);
@@ -226,6 +268,14 @@ void AMQCharacter::OnJournal()
 	if (AMQGameMode* GameMode = GetWorld()->GetAuthGameMode<AMQGameMode>())
 	{
 		GameMode->OnJournalPressed();
+	}
+}
+
+void AMQCharacter::OnPartner()
+{
+	if (AMQGameMode* GameMode = GetWorld()->GetAuthGameMode<AMQGameMode>())
+	{
+		GameMode->OnCyclePartnerPressed();
 	}
 }
 

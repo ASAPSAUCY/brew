@@ -41,6 +41,30 @@ AMemoryCreature::AMemoryCreature()
 	}
 
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> BaseMaterial(TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
+
+	// A face makes a blob a friend: two eyes on the +X (forward) side of the body.
+	auto MakeFacePart = [this](const TCHAR* Name, const FVector& Location, float Scale) -> UStaticMeshComponent*
+	{
+		UStaticMeshComponent* Part = CreateDefaultSubobject<UStaticMeshComponent>(Name);
+		Part->SetupAttachment(BodyMesh.Get());
+		Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Part->SetRelativeLocation(Location);
+		Part->SetRelativeScale3D(FVector(Scale, Scale, Scale));
+		if (SphereAsset != nullptr)
+		{
+			Part->SetStaticMesh(SphereAsset);
+		}
+		if (BaseMaterial.Succeeded())
+		{
+			Part->SetMaterial(0, BaseMaterial.Object);
+		}
+		return Part;
+	};
+	LeftEye = MakeFacePart(TEXT("LeftEye"), FVector(48.f, -18.f, 15.f), 0.16f);
+	RightEye = MakeFacePart(TEXT("RightEye"), FVector(48.f, 18.f, 15.f), 0.16f);
+	LeftPupil = MakeFacePart(TEXT("LeftPupil"), FVector(54.f, -18.f, 15.f), 0.08f);
+	RightPupil = MakeFacePart(TEXT("RightPupil"), FVector(54.f, 18.f, 15.f), 0.08f);
+
 	if (BaseMaterial.Succeeded())
 	{
 		BodyMesh->SetMaterial(0, BaseMaterial.Object);
@@ -82,6 +106,23 @@ void AMemoryCreature::BeginPlay()
 	if (UMaterialInstanceDynamic* TopperMaterial = TopperMesh->CreateDynamicMaterialInstance(0))
 	{
 		TopperMaterial->SetVectorParameterValue(TEXT("Color"), Def.TopColor);
+	}
+
+	const FLinearColor EyeWhite(0.97f, 0.97f, 0.95f);
+	const FLinearColor PupilDark(0.04f, 0.04f, 0.05f);
+	for (UStaticMeshComponent* Eye : { LeftEye.Get(), RightEye.Get() })
+	{
+		if (UMaterialInstanceDynamic* Material = Eye->CreateDynamicMaterialInstance(0))
+		{
+			Material->SetVectorParameterValue(TEXT("Color"), EyeWhite);
+		}
+	}
+	for (UStaticMeshComponent* Pupil : { LeftPupil.Get(), RightPupil.Get() })
+	{
+		if (UMaterialInstanceDynamic* Material = Pupil->CreateDynamicMaterialInstance(0))
+		{
+			Material->SetVectorParameterValue(TEXT("Color"), PupilDark);
+		}
 	}
 
 	SetLabel(Def.Name);

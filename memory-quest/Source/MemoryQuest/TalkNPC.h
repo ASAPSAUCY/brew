@@ -30,5 +30,17 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "NPC")
 	TObjectPtr<UStaticMeshComponent> HeadMesh;
 
+	UPROPERTY(VisibleAnywhere, Category = "NPC")
+	TObjectPtr<UStaticMeshComponent> LeftEye;
+
+	UPROPERTY(VisibleAnywhere, Category = "NPC")
+	TObjectPtr<UStaticMeshComponent> RightEye;
+
+	UPROPERTY(VisibleAnywhere, Category = "NPC")
+	TObjectPtr<UStaticMeshComponent> LeftPupil;
+
+	UPROPERTY(VisibleAnywhere, Category = "NPC")
+	TObjectPtr<UStaticMeshComponent> RightPupil;
+
 	int32 NpcIndex = 0;
 };

@@ -53,6 +53,7 @@ private:
 	void DoJumpStart();
 	void OnInteract();
 	void OnJournal();
+	void OnPartner();
 	void OnChoice1();
 	void OnChoice2();
 	void OnChoice3();
@@ -71,6 +72,18 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Visuals")
 	TObjectPtr<UStaticMeshComponent> HeadMesh;
 
+	UPROPERTY(VisibleAnywhere, Category = "Visuals")
+	TObjectPtr<UStaticMeshComponent> LeftEye;
+
+	UPROPERTY(VisibleAnywhere, Category = "Visuals")
+	TObjectPtr<UStaticMeshComponent> RightEye;
+
+	UPROPERTY(VisibleAnywhere, Category = "Visuals")
+	TObjectPtr<UStaticMeshComponent> LeftPupil;
+
+	UPROPERTY(VisibleAnywhere, Category = "Visuals")
+	TObjectPtr<UStaticMeshComponent> RightPupil;
+
 	// Runtime-built input assets, kept in UPROPERTYs so the GC leaves them alone.
 	UPROPERTY()
 	TObjectPtr<UInputMappingContext> DefaultMappingContext;
@@ -86,6 +99,9 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UInputAction> JournalAction;
+
+	UPROPERTY()
+	TObjectPtr<UInputAction> PartnerAction;
 
 	UPROPERTY()
 	TObjectPtr<UInputAction> Choice1Action;

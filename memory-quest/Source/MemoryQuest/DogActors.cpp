@@ -46,12 +46,55 @@ ACompanionDog::ACompanionDog()
 		TailMesh->SetStaticMesh(CubeMesh.Object);
 	}
 
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> BaseMaterial(TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
+
+	auto MakeFacePart = [this](const TCHAR* Name, const FVector& Location, float Scale) -> UStaticMeshComponent*
+	{
+		UStaticMeshComponent* Part = CreateDefaultSubobject<UStaticMeshComponent>(Name);
+		Part->SetupAttachment(HeadMesh.Get());
+		Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Part->SetRelativeLocation(Location);
+		Part->SetRelativeScale3D(FVector(Scale, Scale, Scale));
+		if (SphereMesh.Succeeded())
+		{
+			Part->SetStaticMesh(SphereMesh.Object);
+		}
+		if (BaseMaterial.Succeeded())
+		{
+			Part->SetMaterial(0, BaseMaterial.Object);
+		}
+		return Part;
+	};
+	LeftEye = MakeFacePart(TEXT("LeftEye"), FVector(46.f, -22.f, 15.f), 0.28f);
+	RightEye = MakeFacePart(TEXT("RightEye"), FVector(46.f, 22.f, 15.f), 0.28f);
+	LeftPupil = MakeFacePart(TEXT("LeftPupil"), FVector(54.f, -22.f, 15.f), 0.14f);
+	RightPupil = MakeFacePart(TEXT("RightPupil"), FVector(54.f, 22.f, 15.f), 0.14f);
+	NoseMesh = MakeFacePart(TEXT("NoseMesh"), FVector(54.f, 0.f, -12.f), 0.2f);
+
 	if (BaseMaterial.Succeeded())
 	{
 		BodyMesh->SetMaterial(0, BaseMaterial.Object);
 		HeadMesh->SetMaterial(0, BaseMaterial.Object);
 		TailMesh->SetMaterial(0, BaseMaterial.Object);
+	}
+}
+
+void ACompanionDog::ApplyFaceColors()
+{
+	for (UStaticMeshComponent* Eye : { LeftEye.Get(), RightEye.Get() })
+	{
+		if (UMaterialInstanceDynamic* Material = Eye->CreateDynamicMaterialInstance(0))
+		{
+			Material->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.97f, 0.97f, 0.95f));
+		}
+	}
+	for (UStaticMeshComponent* Dark : { LeftPupil.Get(), RightPupil.Get(), NoseMesh.Get() })
+	{
+		if (UMaterialInstanceDynamic* Material = Dark->CreateDynamicMaterialInstance(0))
+		{
+			Material->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.04f, 0.04f, 0.05f));
+		}
 	}
 }
 
@@ -67,6 +110,7 @@ void ACompanionDog::BeginPlay()
 		}
 	}
 
+	ApplyFaceColors();
 	SetLabel(StoryData::BuddyName());
 	SetPrompt(FString::Printf(TEXT("E - Pet %s"), *StoryData::BuddyName()));
 }
@@ -137,6 +181,7 @@ void ARumorSpirit::BeginPlay()
 		}
 	}
 
+	ApplyFaceColors();
 	SetLabel(TEXT("Rumor"));
 	SetPrompt(TEXT("E - Sit with Rumor for a moment"));
 }

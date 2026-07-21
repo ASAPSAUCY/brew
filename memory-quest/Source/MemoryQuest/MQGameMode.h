@@ -21,14 +21,17 @@ enum class EMQFlow : uint8
 	Finale
 };
 
-/** Live state of the current (gentle) creature battle. */
+/** Live state of the current (gentle) creature battle: your partner vs a wild memory. */
 struct FMQBattleState
 {
 	int32 CreatureIndex = -1;
 	int32 HP = 0;
 	int32 MaxHP = 1;
-	int32 Charm = 0;
-	int32 Heart = 100;
+	int32 PartnerHP = 1;
+	int32 PartnerMaxHP = 1;
+	FString PartnerName;
+	FString PartnerAttackA;
+	FString PartnerAttackB;
 	TArray<FString> Log;
 };
 
@@ -60,6 +63,7 @@ public:
 	void OnInteractPressed(AMQCharacter* Player);
 	void OnJournalPressed();
 	void OnChoicePressed(int32 ChoiceNumber);
+	void OnCyclePartnerPressed();
 
 	// ---- Dialogue -----------------------------------------------------------
 	void StartDialogue(const FString& SpeakerName, const TArray<FString>& Pages, const FLinearColor& SpeakerColor);
@@ -100,6 +104,11 @@ public:
 	const FMQBattleState& GetBattle() const { return Battle; }
 	const FMQMemoryCard& GetMemoryCard() const { return MemoryCard; }
 
+	/** Party entry for the scrapbook: INDEX_NONE is Buddy, otherwise a creature index. */
+	const TArray<int32>& GetParty() const { return Party; }
+	int32 GetActivePartyIndex() const { return ActivePartyIndex; }
+	FString GetPartyMemberName(int32 PartyEntry) const;
+
 	const FString& GetBannerTitle() const { return BannerTitle; }
 	const FString& GetBannerSubtitle() const { return BannerSubtitle; }
 	float GetBannerHideTime() const { return BannerHideTime; }
@@ -112,6 +121,10 @@ private:
 	void EndBattle(const FString& PartingLine);
 	void MarkCreatureCaught(int32 Index);
 	void ShowBanner(const FString& Title, const FString& Subtitle, float Duration);
+
+	// The battle team: Buddy (INDEX_NONE) plus every caught memory.
+	TArray<int32> Party;
+	int32 ActivePartyIndex = 0;
 
 	EMQFlow Flow = EMQFlow::Explore;
 

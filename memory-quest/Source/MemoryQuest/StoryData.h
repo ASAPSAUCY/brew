@@ -78,6 +78,11 @@ namespace StoryData
 	FString BuddyName();
 	const TArray<FString>& BuddyPages();
 
+	// Buddy is the starter battle partner. Caught memories join the team too.
+	FString BuddyAttackA();
+	FString BuddyAttackB();
+	int32 BuddyMaxHP();
+
 	// ---- Quest tuning ------------------------------------------------------
 	int32 CreaturesNeededForEscapeRoom(); // 8
 	int32 KeepsakesNeededForEscapeRoom(); // 6

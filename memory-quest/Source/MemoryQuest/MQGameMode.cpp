@@ -22,6 +22,9 @@ void AMQGameMode::InitGame(const FString& MapName, const FString& Options, FStri
 	CaughtFlags.Init(false, StoryData::Creatures().Num());
 	KeepsakeFlags.Init(false, StoryData::Keepsakes().Num());
 
+	// Buddy is always the starter partner; caught memories join behind him.
+	Party.Add(INDEX_NONE);
+
 	// Build the world now: InitGame runs before the player logs in, so the
 	// PlayerStart the builder spawns exists by the time RestartPlayer needs it.
 	if (AWorldBuilder* Builder = GetWorld()->SpawnActor<AWorldBuilder>())
@@ -105,34 +108,48 @@ void AMQGameMode::OnChoicePressed(int32 ChoiceNumber)
 
 	switch (ChoiceNumber)
 	{
-	case 1: // Tease: wears the memory down, but never below 1 - this is a cozy game.
+	case 1: // Partner's reliable move.
 	{
-		const int32 Damage = FMath::RandRange(20, 36);
+		const int32 Damage = FMath::RandRange(18, 30);
 		Battle.HP = FMath::Max(1, Battle.HP - Damage);
-		AddBattleLog(FString::Printf(TEXT("You teased %s! Its resolve drops by %d."), *Def.Name, Damage));
+		AddBattleLog(FString::Printf(TEXT("%s used %s! %s's spirit drops by %d."),
+			*Battle.PartnerName, *Battle.PartnerAttackA, *Def.Name, Damage));
 		if (Battle.HP == 1)
 		{
-			AddBattleLog(FString::Printf(TEXT("%s is all tired out! Now's your moment!"), *Def.Name));
+			AddBattleLog(FString::Printf(TEXT("%s is all tired out! Treat time!"), *Def.Name));
 		}
 		CreatureTurn();
 		break;
 	}
-	case 2: // Sweet talk: raises catch chance.
+	case 2: // Partner's wild move: bigger swing, less reliable.
 	{
-		Battle.Charm = FMath::Min(Battle.Charm + 1, 3);
-		AddBattleLog(FString::Printf(TEXT("You sweet-talked %s. It's blushing! (Charm up)"), *Def.Name));
+		const int32 Damage = FMath::RandRange(6, 44);
+		Battle.HP = FMath::Max(1, Battle.HP - Damage);
+		if (Damage < 14)
+		{
+			AddBattleLog(FString::Printf(TEXT("%s used %s... it kind of whiffed. %d spirit."),
+				*Battle.PartnerName, *Battle.PartnerAttackB, Damage));
+		}
+		else
+		{
+			AddBattleLog(FString::Printf(TEXT("%s used %s! Huge! %s's spirit drops by %d."),
+				*Battle.PartnerName, *Battle.PartnerAttackB, *Def.Name, Damage));
+		}
+		if (Battle.HP == 1)
+		{
+			AddBattleLog(FString::Printf(TEXT("%s is all tired out! Treat time!"), *Def.Name));
+		}
 		CreatureTurn();
 		break;
 	}
-	case 3: // Give a treat: the catch attempt.
+	case 3: // Give a treat: the befriend attempt.
 	{
-		float Chance = 0.18f + 0.55f * (1.f - static_cast<float>(Battle.HP) / static_cast<float>(Battle.MaxHP))
-			+ 0.12f * static_cast<float>(Battle.Charm);
-		Chance = FMath::Min(Chance, 0.95f);
+		float Chance = 0.20f + 0.60f * (1.f - static_cast<float>(Battle.HP) / static_cast<float>(Battle.MaxHP));
+		Chance = FMath::Min(Chance, 0.92f);
 
 		if (FMath::FRand() < Chance)
 		{
-			AddBattleLog(FString::Printf(TEXT("%s takes the treat... and decides it likes you!"), *Def.Name));
+			AddBattleLog(FString::Printf(TEXT("%s takes the treat... and joins your team!"), *Def.Name));
 			MarkCreatureCaught(Battle.CreatureIndex);
 
 			if (AMemoryCreature* Creature = BattleCreature.Get())
@@ -142,7 +159,7 @@ void AMQGameMode::OnChoicePressed(int32 ChoiceNumber)
 			BattleCreature = nullptr;
 
 			ShowMemoryCard(Def.MemoryTitle,
-				FString::Printf(TEXT("%s - %s - %s"), *Def.Name, *Def.Species, *Def.Zone),
+				FString::Printf(TEXT("%s - %s - joined your team!"), *Def.Name, *Def.Species),
 				Def.MemoryText);
 			Flow = EMQFlow::MemoryCard; // Player stays frozen for the card.
 		}
@@ -160,6 +177,28 @@ void AMQGameMode::OnChoicePressed(int32 ChoiceNumber)
 	default:
 		break;
 	}
+}
+
+void AMQGameMode::OnCyclePartnerPressed()
+{
+	if (Flow != EMQFlow::Explore || Party.Num() == 0)
+	{
+		return;
+	}
+
+	ActivePartyIndex = (ActivePartyIndex + 1) % Party.Num();
+	ShowBanner(FString::Printf(TEXT("Partner: %s!"), *GetPartyMemberName(Party[ActivePartyIndex])),
+		Party.Num() == 1 ? TEXT("Catch more memories to grow the team") : FString(), 2.5f);
+}
+
+FString AMQGameMode::GetPartyMemberName(int32 PartyEntry) const
+{
+	if (PartyEntry == INDEX_NONE)
+	{
+		return StoryData::BuddyName();
+	}
+	const TArray<FMQCreatureDef>& Creatures = StoryData::Creatures();
+	return Creatures.IsValidIndex(PartyEntry) ? Creatures[PartyEntry].Name : FString();
 }
 
 // ---------------------------------------------------------------------------
@@ -214,8 +253,28 @@ void AMQGameMode::StartBattle(AMemoryCreature* Creature)
 	Battle.CreatureIndex = Index;
 	Battle.MaxHP = Def.MaxHP;
 	Battle.HP = Def.MaxHP;
+
+	// Send out the active partner. Partners nap between battles, so full HP.
+	const int32 PartyEntry = Party.IsValidIndex(ActivePartyIndex) ? Party[ActivePartyIndex] : INDEX_NONE;
+	if (PartyEntry == INDEX_NONE)
+	{
+		Battle.PartnerName = StoryData::BuddyName();
+		Battle.PartnerAttackA = StoryData::BuddyAttackA();
+		Battle.PartnerAttackB = StoryData::BuddyAttackB();
+		Battle.PartnerMaxHP = StoryData::BuddyMaxHP();
+	}
+	else
+	{
+		const FMQCreatureDef& PartnerDef = Creatures[PartyEntry];
+		Battle.PartnerName = PartnerDef.Name;
+		Battle.PartnerAttackA = PartnerDef.AttackA;
+		Battle.PartnerAttackB = PartnerDef.AttackB;
+		Battle.PartnerMaxHP = PartnerDef.MaxHP;
+	}
+	Battle.PartnerHP = Battle.PartnerMaxHP;
+
 	AddBattleLog(FString::Printf(TEXT("A wild memory appeared: %s, the %s!"), *Def.Name, *Def.Species));
-	AddBattleLog(TEXT("Wear it down, sweet-talk it, then win it over with a treat."));
+	AddBattleLog(FString::Printf(TEXT("Go, %s! Wear it down, then befriend it with a treat."), *Battle.PartnerName));
 }
 
 void AMQGameMode::CreatureTurn()
@@ -233,13 +292,13 @@ void AMQGameMode::CreatureTurn()
 	const FMQCreatureDef& Def = Creatures[Battle.CreatureIndex];
 
 	const FString AttackName = FMath::RandBool() ? Def.AttackA : Def.AttackB;
-	const int32 Damage = FMath::RandRange(8, 16);
-	Battle.Heart -= Damage;
-	AddBattleLog(FString::Printf(TEXT("%s used %s! Your composure drops by %d."), *Def.Name, *AttackName, Damage));
+	const int32 Damage = FMath::RandRange(10, 18);
+	Battle.PartnerHP -= Damage;
+	AddBattleLog(FString::Printf(TEXT("%s used %s! %s takes %d."), *Def.Name, *AttackName, *Battle.PartnerName, Damage));
 
-	if (Battle.Heart <= 0)
+	if (Battle.PartnerHP <= 0)
 	{
-		EndBattle(FString::Printf(TEXT("You got completely flustered! %s scampers off... for now."), *Def.Name));
+		EndBattle(FString::Printf(TEXT("%s is all tuckered out! %s scampers off... for now."), *Battle.PartnerName, *Def.Name));
 	}
 }
 
@@ -267,9 +326,10 @@ void AMQGameMode::AddBattleLog(const FString& Line)
 
 void AMQGameMode::MarkCreatureCaught(int32 Index)
 {
-	if (CaughtFlags.IsValidIndex(Index))
+	if (CaughtFlags.IsValidIndex(Index) && !CaughtFlags[Index])
 	{
 		CaughtFlags[Index] = true;
+		Party.Add(Index);
 	}
 }
 

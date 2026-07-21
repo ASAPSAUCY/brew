@@ -42,6 +42,18 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Creature")
 	TObjectPtr<UStaticMeshComponent> TopperMesh;
 
+	UPROPERTY(VisibleAnywhere, Category = "Creature")
+	TObjectPtr<UStaticMeshComponent> LeftEye;
+
+	UPROPERTY(VisibleAnywhere, Category = "Creature")
+	TObjectPtr<UStaticMeshComponent> RightEye;
+
+	UPROPERTY(VisibleAnywhere, Category = "Creature")
+	TObjectPtr<UStaticMeshComponent> LeftPupil;
+
+	UPROPERTY(VisibleAnywhere, Category = "Creature")
+	TObjectPtr<UStaticMeshComponent> RightPupil;
+
 	UPROPERTY()
 	TObjectPtr<UStaticMesh> SphereAsset;
 

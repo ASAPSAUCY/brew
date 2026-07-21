@@ -37,6 +37,29 @@ ATalkNPC::ATalkNPC()
 	}
 
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> BaseMaterial(TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
+
+	auto MakeFacePart = [this](const TCHAR* Name, const FVector& Location, float Scale) -> UStaticMeshComponent*
+	{
+		UStaticMeshComponent* Part = CreateDefaultSubobject<UStaticMeshComponent>(Name);
+		Part->SetupAttachment(HeadMesh.Get());
+		Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Part->SetRelativeLocation(Location);
+		Part->SetRelativeScale3D(FVector(Scale, Scale, Scale));
+		if (SphereMesh.Succeeded())
+		{
+			Part->SetStaticMesh(SphereMesh.Object);
+		}
+		if (BaseMaterial.Succeeded())
+		{
+			Part->SetMaterial(0, BaseMaterial.Object);
+		}
+		return Part;
+	};
+	LeftEye = MakeFacePart(TEXT("LeftEye"), FVector(44.f, -20.f, 8.f), 0.24f);
+	RightEye = MakeFacePart(TEXT("RightEye"), FVector(44.f, 20.f, 8.f), 0.24f);
+	LeftPupil = MakeFacePart(TEXT("LeftPupil"), FVector(52.f, -20.f, 8.f), 0.12f);
+	RightPupil = MakeFacePart(TEXT("RightPupil"), FVector(52.f, 20.f, 8.f), 0.12f);
+
 	if (BaseMaterial.Succeeded())
 	{
 		BodyMesh->SetMaterial(0, BaseMaterial.Object);
@@ -63,6 +86,21 @@ void ATalkNPC::BeginPlay()
 	{
 		// Heads get a lighter tint of the body color so faces read at a glance.
 		HeadMaterial->SetVectorParameterValue(TEXT("Color"), Def.Color * 0.5f + FLinearColor(0.5f, 0.45f, 0.4f));
+	}
+
+	for (UStaticMeshComponent* Eye : { LeftEye.Get(), RightEye.Get() })
+	{
+		if (UMaterialInstanceDynamic* Material = Eye->CreateDynamicMaterialInstance(0))
+		{
+			Material->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.97f, 0.97f, 0.95f));
+		}
+	}
+	for (UStaticMeshComponent* Pupil : { LeftPupil.Get(), RightPupil.Get() })
+	{
+		if (UMaterialInstanceDynamic* Material = Pupil->CreateDynamicMaterialInstance(0))
+		{
+			Material->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.04f, 0.04f, 0.05f));
+		}
 	}
 
 	SetLabel(Def.Name);

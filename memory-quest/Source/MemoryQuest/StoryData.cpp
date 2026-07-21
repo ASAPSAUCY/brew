@@ -440,6 +440,9 @@ const TArray<FMQNpcDef>& StoryData::Npcs()
 }
 
 FString StoryData::BuddyName() { return TEXT("Buddy"); }
+FString StoryData::BuddyAttackA() { return TEXT("Zoomies"); }
+FString StoryData::BuddyAttackB() { return TEXT("Heroic Bork"); }
+int32 StoryData::BuddyMaxHP() { return 90; }
 
 const TArray<FString>& StoryData::BuddyPages()
 {

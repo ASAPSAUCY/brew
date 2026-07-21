@@ -21,7 +21,7 @@ You play as Kyle, exploring a little island of your shared history with Buddy tr
 **What's in it:**
 
 - **13 catchable memory creatures** (Memorydex) — from Bogey the Golf Gremlin to Mimossy the Brunch Spirit — each carrying a memory card about a real moment
-- **Gentle Pokémon-style battles**: tease, sweet-talk, then win them over with a treat. Nothing ever faints; worst case you get flustered and it scampers off
+- **Partner battles, Pokémon style**: Buddy is your starter. Your partner throws its own signature moves (Zoomies! Bank Shot! Gravy Wave!) against wild memories; weaken them, then befriend them with a treat and **they join your team**. Switch partners with `C`. Nothing ever faints — partners just get tuckered out
 - **8 keepsakes** for the scrapbook (the subway token, the suspicious golf scorecard...)
 - **NPC villagers** who tell the story — including Claudia herself, who has *notes*
 - **Rumor** 🐾 — a quiet tribute in the park. Sit with him; he joins the Memorydex as its one special entry
@@ -35,6 +35,7 @@ You play as Kyle, exploring a little island of your shared history with Buddy tr
 | Jump | `Space` | Bottom face button |
 | Interact / talk / advance dialogue | `E` | Left face button |
 | Scrapbook | `Tab` | Top face button |
+| Switch battle partner | `C` | Right shoulder |
 | Battle choices | `1` `2` `3` `4` | D-pad Up / Right / Down / Left |
 
 The camera is a fixed cozy top-down follow camera — no mouse needed.

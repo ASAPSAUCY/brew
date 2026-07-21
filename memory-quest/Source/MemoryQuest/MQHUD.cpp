@@ -95,7 +95,7 @@ void AMQHUD::DrawTracker(const AMQGameMode& GameMode)
 	DrawText(Line3, GameMode.IsEscapeRoomUnlocked() ? FLinearColor(0.3f, 1.f, 0.4f) : FLinearColor(0.7f, 0.7f, 0.7f),
 		X, 35.f + 2.f * (Height + 8.f), Font, 1.3f);
 
-	DrawText(TEXT("WASD move - Space jump - E interact - Tab scrapbook"),
+	DrawText(TEXT("WASD move - Space jump - E interact - Tab scrapbook - C switch partner"),
 		FLinearColor(1.f, 1.f, 1.f, 0.45f), 30.f, Canvas->SizeY - 40.f, Font, 1.f);
 }
 
@@ -199,14 +199,14 @@ void AMQHUD::DrawBattle(const AMQGameMode& GameMode)
 	}
 
 	DrawRect(PanelColor, BoxX, BoxY, BoxWidth, 250.f);
-	DrawText(TEXT("Your composure"), SoftWhite, BoxX + 25.f, BoxY + 20.f, Font, 1.f);
-	const float HeartFraction = FMath::Clamp(static_cast<float>(Battle.Heart) / 100.f, 0.f, 1.f);
-	DrawRect(FLinearColor(0.2f, 0.2f, 0.2f), BoxX + 220.f, BoxY + 22.f, 300.f, 18.f);
-	DrawRect(HeartRed, BoxX + 220.f, BoxY + 22.f, 300.f * HeartFraction, 18.f);
+	DrawText(FString::Printf(TEXT("Your partner: %s"), *Battle.PartnerName), SoftWhite, BoxX + 25.f, BoxY + 20.f, Font, 1.2f);
+	const float PartnerFraction = FMath::Clamp(static_cast<float>(Battle.PartnerHP) / static_cast<float>(Battle.PartnerMaxHP), 0.f, 1.f);
+	DrawRect(FLinearColor(0.2f, 0.2f, 0.2f), BoxX + 320.f, BoxY + 22.f, 300.f, 18.f);
+	DrawRect(HeartRed, BoxX + 320.f, BoxY + 22.f, 300.f * PartnerFraction, 18.f);
 
-	DrawText(TEXT("1 - Tease it   (its resolve drops)"), SoftWhite, BoxX + 25.f, BoxY + 65.f, Font, 1.35f);
-	DrawText(TEXT("2 - Sweet-talk it   (it likes you more)"), SoftWhite, BoxX + 25.f, BoxY + 105.f, Font, 1.35f);
-	DrawText(TEXT("3 - Give it a treat   (try to befriend it!)"), Gold, BoxX + 25.f, BoxY + 145.f, Font, 1.35f);
+	DrawText(FString::Printf(TEXT("1 - %s   (steady)"), *Battle.PartnerAttackA), SoftWhite, BoxX + 25.f, BoxY + 65.f, Font, 1.35f);
+	DrawText(FString::Printf(TEXT("2 - %s   (wild swing)"), *Battle.PartnerAttackB), SoftWhite, BoxX + 25.f, BoxY + 105.f, Font, 1.35f);
+	DrawText(TEXT("3 - Give it a treat   (befriend it - joins your team!)"), Gold, BoxX + 25.f, BoxY + 145.f, Font, 1.35f);
 	DrawText(TEXT("4 - Wave goodbye"), FLinearColor(0.7f, 0.7f, 0.7f), BoxX + 25.f, BoxY + 185.f, Font, 1.35f);
 }
 
@@ -239,7 +239,7 @@ void AMQHUD::DrawScrapbook(const AMQGameMode& GameMode)
 
 	DrawRect(FLinearColor(0.03f, 0.03f, 0.06f, 0.93f), 0.f, 0.f, Canvas->SizeX, Canvas->SizeY);
 	DrawCentered(TEXT("THE SCRAPBOOK"), Gold, 45.f, 2.2f);
-	DrawCentered(TEXT("Tab - close"), FLinearColor(1.f, 1.f, 1.f, 0.5f), Canvas->SizeY - 50.f, 1.1f);
+	DrawCentered(TEXT("Tab - close   |   C (while exploring) - switch battle partner"), FLinearColor(1.f, 1.f, 1.f, 0.5f), Canvas->SizeY - 50.f, 1.1f);
 
 	const TArray<FMQCreatureDef>& Creatures = StoryData::Creatures();
 	const TArray<FMQKeepsakeDef>& Keepsakes = StoryData::Keepsakes();
@@ -248,18 +248,24 @@ void AMQHUD::DrawScrapbook(const AMQGameMode& GameMode)
 	const float RightX = Canvas->SizeX * 0.56f;
 	float Y = 130.f;
 
-	DrawText(TEXT("MEMORYDEX"), FLinearColor(0.7f, 0.85f, 0.9f), LeftX, Y, Font, 1.5f);
+	DrawText(TEXT("YOUR TEAM & MEMORYDEX"), FLinearColor(0.7f, 0.85f, 0.9f), LeftX, Y, Font, 1.5f);
 	float LineY = Y + 45.f;
+	const TArray<int32>& Party = GameMode.GetParty();
+	const int32 ActiveEntry = Party.IsValidIndex(GameMode.GetActivePartyIndex()) ? Party[GameMode.GetActivePartyIndex()] : INDEX_NONE;
+	DrawText(FString::Printf(TEXT("%s Buddy - the goodest starter"), ActiveEntry == INDEX_NONE ? TEXT(">") : TEXT(" ")),
+		ActiveEntry == INDEX_NONE ? Gold : SoftWhite, LeftX, LineY, Font, 1.15f);
+	LineY += 32.f;
 	for (int32 Index = 0; Index < Creatures.Num(); ++Index)
 	{
 		const FMQCreatureDef& Def = Creatures[Index];
 		if (GameMode.IsCreatureCaught(Index))
 		{
-			DrawText(FString::Printf(TEXT("%s - %s"), *Def.Name, *Def.MemoryTitle), SoftWhite, LeftX, LineY, Font, 1.15f);
+			DrawText(FString::Printf(TEXT("%s %s - %s"), ActiveEntry == Index ? TEXT(">") : TEXT(" "), *Def.Name, *Def.MemoryTitle),
+				ActiveEntry == Index ? Gold : SoftWhite, LeftX, LineY, Font, 1.15f);
 		}
 		else
 		{
-			DrawText(FString::Printf(TEXT("??? - somewhere in %s"), *Def.Zone), FLinearColor(0.5f, 0.5f, 0.55f), LeftX, LineY, Font, 1.15f);
+			DrawText(FString::Printf(TEXT("  ??? - somewhere in %s"), *Def.Zone), FLinearColor(0.5f, 0.5f, 0.55f), LeftX, LineY, Font, 1.15f);
 		}
 		LineY += 32.f;
 	}

@@ -32,6 +32,24 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Dog")
 	TObjectPtr<UStaticMeshComponent> TailMesh;
 
+	UPROPERTY(VisibleAnywhere, Category = "Dog")
+	TObjectPtr<UStaticMeshComponent> LeftEye;
+
+	UPROPERTY(VisibleAnywhere, Category = "Dog")
+	TObjectPtr<UStaticMeshComponent> RightEye;
+
+	UPROPERTY(VisibleAnywhere, Category = "Dog")
+	TObjectPtr<UStaticMeshComponent> LeftPupil;
+
+	UPROPERTY(VisibleAnywhere, Category = "Dog")
+	TObjectPtr<UStaticMeshComponent> RightPupil;
+
+	UPROPERTY(VisibleAnywhere, Category = "Dog")
+	TObjectPtr<UStaticMeshComponent> NoseMesh;
+
+	/** Colors the eyes, pupils and nose; shared by Buddy and Rumor. */
+	void ApplyFaceColors();
+
 	/** Fill color applied to the whole dog in BeginPlay. */
 	FLinearColor CoatColor = FLinearColor(0.85f, 0.60f, 0.20f);
 
