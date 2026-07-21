@@ -200,3 +200,12 @@
 !/.sublime
 /.sublime/homebrew.sublime-workspace
 !/.vscode
+
+# Unignore the code-only Unreal Engine platformer project
+!/unreal-platformer
+
+# Unignore the Memory Quest game project
+!/memory-quest
+
+# Unignore the Memory Quest browser edition
+!/memory-quest-web

@@ -1,0 +1,422 @@
+<script>
+'use strict';
+// ============================================================================
+//  GAME STATE
+// ============================================================================
+const NC = DATA.creatures.length, NK = DATA.keepsakes.length;
+const G = {
+  mode: 'title',
+  player: { x: px(108), y: px(76), dir: 1, anim: 0, moving: false },
+  buddy: { x: px(106), y: px(78), dir: 1 },
+  buddyTrail: [],
+  caught: Array(NC).fill(false), keeps: Array(NK).fill(false),
+  party: [-1], active: 0,
+  puzzleNext: 0, puzzleSolved: false, doorOpen: false, finaleSeen: false,
+  dialog: null, card: null, battle: null, book: false,
+  banner: null, zone: null, muted: false, shake: 0,
+};
+const creatures = DATA.creatures.map((d, i) => {
+  const [cx, cy, rad] = CREATURE_POS[d.id];
+  return { i, d, x: cx, y: cy, hx: cx, hy: cy, rad, tx: cx, ty: cy, pause: Math.random() * 2, dir: 1, bob: Math.random() * 6 };
+});
+function aliveCreatures() { return creatures.filter(c => !G.caught[c.i]); }
+function caughtCount() { return G.caught.filter(Boolean).length; }
+function keepCount() { return G.keeps.filter(Boolean).length; }
+function unlocked() { return caughtCount() >= DATA.needCreatures && keepCount() >= DATA.needKeepsakes; }
+function partyName(e) { return e === -1 ? DATA.buddy.name : DATA.creatures[e].name; }
+
+// ---- Save ------------------------------------------------------------------
+const SAVE_KEY = 'memory_quest_save_v1';
+function save() {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({
+    caught: G.caught, keeps: G.keeps, party: G.party, active: G.active,
+    puzzleNext: G.puzzleNext, puzzleSolved: G.puzzleSolved, doorOpen: G.doorOpen,
+    finaleSeen: G.finaleSeen, x: G.player.x, y: G.player.y })); } catch (e) {}
+}
+function loadSave() {
+  try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (!s) return false;
+    G.caught = s.caught; G.keeps = s.keeps; G.party = s.party; G.active = s.active;
+    G.puzzleNext = s.puzzleNext; G.puzzleSolved = s.puzzleSolved; G.doorOpen = s.doorOpen;
+    G.finaleSeen = s.finaleSeen; G.player.x = s.x; G.player.y = s.y;
+    G.buddy.x = s.x - 20; G.buddy.y = s.y + 8;
+    if (G.doorOpen) { const di = solids.indexOf(doorSolid); if (di >= 0) solids.splice(di, 1); }
+    return true; } catch (e) { return false; }
+}
+function hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } }
+
+// ============================================================================
+//  AUDIO — tiny WebAudio chiptune + sfx. M toggles.
+// ============================================================================
+let AC = null, musicTimer = null;
+function audio() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } return AC; }
+function tone(f, dur, type = 'triangle', vol = 0.08, delay = 0) {
+  const ac = audio(); if (!ac || G.muted) return;
+  const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.value = f;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0005, t + dur);
+  o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur + 0.02);
+}
+const SFX = {
+  blip: () => tone(660, 0.07, 'square', 0.04),
+  page: () => tone(440, 0.06, 'square', 0.035),
+  pick: () => { tone(784, 0.1, 'triangle', 0.07); tone(1175, 0.14, 'triangle', 0.06, 0.08); },
+  hit: () => tone(180, 0.12, 'sawtooth', 0.05),
+  hurt: () => tone(120, 0.16, 'sawtooth', 0.05),
+  catchJingle: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.16, 'triangle', 0.08, i * 0.09)),
+  sad: () => { tone(330, 0.15, 'triangle', 0.06); tone(247, 0.22, 'triangle', 0.06, 0.14); },
+  unlock: () => [392, 523, 659, 784].forEach((f, i) => tone(f, 0.2, 'square', 0.05, i * 0.11)),
+  win: () => [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, 0.3, 'triangle', 0.09, i * 0.13)),
+};
+const MELODY = [392, 440, 523, 440, 392, 330, 392, 0, 523, 587, 659, 587, 523, 440, 523, 0];
+let mi = 0;
+function startMusic() {
+  if (musicTimer || !audio()) return;
+  musicTimer = setInterval(() => {
+    if (G.muted || G.mode === 'title') return;
+    const f = MELODY[mi % MELODY.length]; mi++;
+    if (f) { tone(f / 2, 0.5, 'triangle', 0.025); if (mi % 4 === 1) tone(f / 4, 0.6, 'sine', 0.03); }
+  }, 340);
+}
+
+// ============================================================================
+//  DIALOGUE / CARDS / BANNERS
+// ============================================================================
+function say(name, pages) { G.dialog = { name, pages, i: 0 }; G.mode = 'dialog'; SFX.blip(); }
+function advanceDialog() {
+  SFX.page();
+  if (++G.dialog.i >= G.dialog.pages.length) { G.dialog = null; G.mode = 'explore'; }
+}
+function showCard(title, sub, text) { G.card = { title, sub, text }; G.mode = 'card'; }
+function banner(title, sub, secs = 3.2) { G.banner = { title, sub, t: secs }; }
+
+// ============================================================================
+//  BATTLE — your partner vs a wild memory
+// ============================================================================
+const RNG = { f: () => Math.random(), forceCatch: false };
+function startBattle(c) {
+  const e = G.party[G.active];
+  const p = e === -1 ? { n: DATA.buddy.name, a: DATA.buddy.attackA, b: DATA.buddy.attackB, hp: DATA.buddy.hp }
+                     : { n: DATA.creatures[e].name, a: DATA.creatures[e].a, b: DATA.creatures[e].b, hp: DATA.creatures[e].hp };
+  G.battle = { c, hp: c.d.hp, maxHp: c.d.hp, pHp: p.hp, pMaxHp: p.hp, pName: p.n, pA: p.a, pB: p.b, pE: e,
+    log: [], q: [], busy: true, intro: 0.9, flash: 0.4,
+    dHp: c.d.hp, dPHp: p.hp, wOfs: 0, pOfs: 0, wBlink: 0, pBlink: 0, wShake: 0, pShake: 0,
+    wAngle: 0, treat: null, parts: [] };
+  bmsg('A wild memory appeared: ' + c.d.name + ' — ' + c.d.species + '!');
+  bmsg('Go, ' + p.n + '! Wear it down, then befriend it with a treat.');
+  G.mode = 'battle'; SFX.blip();
+}
+function blog(s) { const l = G.battle.log; l.push(s); while (l.length > 3) l.shift(); }
+function bq(step) { G.battle.q.push(step); }
+function bmsg(s) { bq({ t: 'msg', s }); }
+// Screen positions of the two combatants, shared by animation + render.
+function bgeom() {
+  const B = G.battle;
+  const wspr = CSPR[B.c.d.id], pspr = B.pE === -1 ? SPR.buddy : CSPR[DATA.creatures[B.pE].id];
+  return { wspr, ws: 9, wx: VW * 0.62, wy: VH * 0.14,
+           pspr, ps: 7, px_: VW * 0.08, py_: VH * 0.40 };
+}
+function burstAt(x, y, col, n, heart) {
+  for (let i = 0; i < n; i++) {
+    const a = RNG.f() * Math.PI * 2, sp = 40 + RNG.f() * 130;
+    G.battle.parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 50,
+      life: 0.6 + RNG.f() * 0.5, max: 1, col, r: 3 + RNG.f() * 3, heart });
+  }
+}
+function updateBattle(dt) {
+  const B = G.battle; if (!B) return;
+  B.flash = Math.max(0, B.flash - dt);
+  B.wBlink = Math.max(0, B.wBlink - dt); B.pBlink = Math.max(0, B.pBlink - dt);
+  B.wShake = Math.max(0, B.wShake - dt); B.pShake = Math.max(0, B.pShake - dt);
+  // HP bars drain smoothly toward true values.
+  const drain = dt * 1.4;
+  B.dHp += Math.max(-B.maxHp * drain, Math.min(B.maxHp * drain, B.hp - B.dHp));
+  B.dPHp += Math.max(-B.pMaxHp * drain, Math.min(B.pMaxHp * drain, B.pHp - B.dPHp));
+  for (const p of B.parts) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; if (!p.num) p.vy += 160 * dt; }
+  B.parts = B.parts.filter(p => p.life > 0);
+  if (B.intro > 0) { B.intro -= dt; if (B.intro > 0) return; }
+  const s = B.q[0];
+  if (!s) { B.busy = false; B.wOfs = 0; B.pOfs = 0; return; }
+  B.busy = true;
+  const first = s.e === undefined; s.e = (s.e || 0) + dt;
+  const g = bgeom();
+  const wcx = g.wx + g.wspr.w * g.ws / 2, wcy = g.wy + g.wspr.h * g.ws / 2;
+  const pcx = g.px_ + g.pspr.w * g.ps / 2, pcy = g.py_ + g.pspr.h * g.ps / 2;
+  let done = false;
+  if (s.t === 'msg') {
+    if (first) { blog(''); SFX.page(); }
+    const n = Math.floor(s.e * 55);
+    B.log[B.log.length - 1] = s.s.slice(0, n);
+    done = n >= s.s.length + 16;                 // short beat after the line lands
+  } else if (s.t === 'pause') {
+    done = s.e >= (s.dur || 0.4);
+  } else if (s.t === 'lunge') {                  // hop toward the opponent and back
+    const d = 0.34, k = Math.min(1, s.e / d), arc = Math.sin(k * Math.PI) * 48;
+    if (s.who === 'p') B.pOfs = arc; else B.wOfs = -arc;
+    if (first) SFX.blip();
+    done = s.e >= d;
+  } else if (s.t === 'hit') {                    // impact: blink + shake + burst + damage number
+    if (first) {
+      if (s.who === 'w') {
+        B.hp = s.to; B.wBlink = 0.5; B.wShake = 0.4;
+        burstAt(wcx, wcy, '#fff2b0', 10);
+        B.parts.push({ x: wcx, y: g.wy - 6, vx: 0, vy: -46, life: 1, max: 1, col: '#ffe9a8', num: s.dmg });
+        SFX.hit();
+      } else {
+        B.pHp = s.to; B.pBlink = 0.5; B.pShake = 0.4;
+        burstAt(pcx, pcy, '#ff9aa8', 10);
+        B.parts.push({ x: pcx, y: g.py_ - 6, vx: 0, vy: -46, life: 1, max: 1, col: '#ff8a98', num: s.dmg });
+        SFX.hurt();
+      }
+      G.shake = 0.22;
+    }
+    done = s.e >= 0.55;
+  } else if (s.t === 'treat') {                  // treat arcs across the field
+    const d = 0.8; B.treat = { k: Math.min(1, s.e / d) };
+    if (first) SFX.pick();
+    if (s.e >= d) { B.treat = null; done = true; }
+  } else if (s.t === 'wobble') {                 // the will-it-won't-it wiggle
+    const d = 1.7;
+    B.wAngle = Math.sin(s.e * 9) * 0.22 * Math.max(0, 1 - s.e / (d * 1.15));
+    if (first) s.tick = 0;
+    const tick = Math.floor(s.e / 0.38);
+    if (tick > s.tick) { s.tick = tick; SFX.blip(); }
+    if (s.e >= d) { B.wAngle = 0; done = true; }
+  } else if (s.t === 'burst') {                  // befriended! hearts everywhere
+    if (first) { burstAt(wcx, wcy, '#ff6a8a', 16, true); burstAt(wcx, wcy, '#ffe9a8', 8); SFX.catchJingle(); }
+    done = s.e >= 1.0;
+  } else if (s.t === 'do') {
+    s.fn(); done = true;
+  }
+  if (done) B.q.shift();
+}
+function wildTurnSteps() {
+  const B = G.battle, D = B.c.d;
+  const atk = RNG.f() < 0.5 ? D.a : D.b, dmg = 10 + Math.floor(RNG.f() * 9);
+  const to = B.pHp - dmg;
+  bmsg(D.name + ' used ' + atk + '! ' + B.pName + ' takes ' + dmg + '.');
+  bq({ t: 'lunge', who: 'w' });
+  bq({ t: 'hit', who: 'p', to, dmg });
+  if (to <= 0) {
+    bmsg(B.pName + ' is all tuckered out!');
+    bq({ t: 'do', fn: () => endBattle(B.pName + ' is all tuckered out! ' + D.name + ' scampers off... for now.', true) });
+  }
+}
+function endBattle(line, sadSound) {
+  G.battle = null; G.mode = 'explore'; banner(line, '', 3.4); if (sadSound) SFX.sad();
+}
+function battleChoice(n) {
+  const B = G.battle; if (!B || B.busy || B.q.length) return;
+  const D = B.c.d;
+  if (n === 1 || n === 2) {
+    const dmg = n === 1 ? 18 + Math.floor(RNG.f() * 13) : 6 + Math.floor(RNG.f() * 39);
+    const to = Math.max(1, B.hp - dmg);
+    if (n === 1) bmsg(B.pName + ' used ' + B.pA + '! ' + D.name + "'s spirit drops by " + dmg + '.');
+    else bmsg(dmg < 14 ? B.pName + ' used ' + B.pB + '... it kind of whiffed. ' + dmg + ' spirit.'
+                       : B.pName + ' used ' + B.pB + '! Huge! ' + D.name + "'s spirit drops by " + dmg + '.');
+    bq({ t: 'lunge', who: 'p' });
+    bq({ t: 'hit', who: 'w', to, dmg });
+    if (to === 1 && B.hp !== 1) bmsg(D.name + ' is all tired out! Treat time!');
+    wildTurnSteps();
+  } else if (n === 3) {
+    let chance = Math.min(0.2 + 0.6 * (1 - B.hp / B.maxHp), 0.92); if (RNG.forceCatch) chance = 1;
+    bmsg('You offer a treat. ' + D.name + ' sniffs it...');
+    bq({ t: 'treat' });
+    bq({ t: 'wobble' });
+    if (RNG.f() < chance) {
+      bq({ t: 'burst' });
+      bq({ t: 'pause', dur: 0.4 });
+      bq({ t: 'do', fn: () => {
+        G.caught[B.c.i] = true; G.party.push(B.c.i);
+        const wasLocked = !G.doorOpen && unlocked();
+        G.battle = null;
+        showCard(D.title, D.name + ' — ' + D.species + ' — joined your team!', D.text);
+        if (wasLocked) banner('The Final Room can be opened!', 'Kyle is waiting.', 4);
+        save();
+      } });
+    } else { bmsg(D.name + ' wriggles free of the treat! So dramatic.'); wildTurnSteps(); }
+  } else if (n === 4) {
+    bmsg('You wave goodbye...');
+    bq({ t: 'do', fn: () => endBattle('You wave goodbye. ' + D.name + ' waves back. Probably.', false) });
+  }
+}
+function cyclePartner() {
+  if (G.mode !== 'explore') return;
+  G.active = (G.active + 1) % G.party.length; SFX.blip();
+  banner('Partner: ' + partyName(G.party[G.active]) + '!', G.party.length === 1 ? 'Catch more memories to grow the team' : '', 2.2);
+}
+
+// ============================================================================
+//  INTERACTION
+// ============================================================================
+function interactables() {
+  const list = [];
+  for (const id in NPC_POS) { const [x, y] = NPC_POS[id]; const d = DATA.npcs.find(n => n.id === id);
+    list.push({ kind: 'npc', x, y, name: d.name, prompt: 'Talk to ' + d.name, d }); }
+  list.push({ kind: 'buddy', x: G.buddy.x, y: G.buddy.y, name: 'Buddy', prompt: 'Pet Buddy' });
+  for (const c of aliveCreatures())
+    list.push(c.d.special ? { kind: 'rumor', x: c.x, y: c.y, name: 'Rumor', prompt: 'Sit with Rumor for a moment', c }
+                          : { kind: 'creature', x: c.x, y: c.y, name: c.d.name, prompt: 'Say hi to ' + c.d.name + ' (wild memory!)', c });
+  DATA.keepsakes.forEach((k, i) => { if (!G.keeps[i]) { const [x, y] = KEEP_POS[k.id];
+    list.push({ kind: 'keep', x, y, name: k.name, prompt: 'Pick up the ' + k.name, i, k }); } });
+  for (const s of SIGNS) list.push({ kind: 'sign', x: s.x, y: s.y, name: s.name, prompt: 'Look at ' + s.name.toLowerCase(), s });
+  if (!G.doorOpen)
+    list.push({ kind: 'door', x: DOOR.x + DOOR.w / 2, y: DOOR.y + 16, name: 'The Final Room',
+      prompt: unlocked() ? "Open The Final Room. It's time." : 'Locked — memories ' + caughtCount() + '/' + DATA.needCreatures + ', keepsakes ' + keepCount() + '/' + DATA.needKeepsakes });
+  if (G.doorOpen && !G.puzzleSolved)
+    PEDESTALS.forEach((p, i) => list.push({ kind: 'ped', x: p.x, y: p.y, name: 'Pedestal',
+      prompt: (i < G.puzzleNext ? 'Pressed. ' : 'Press the pedestal. ') + DATA.puzzle.clues[i], i }));
+  if (G.puzzleSolved && !G.finaleSeen)
+    list.push({ kind: 'trophy', x: TROPHY_POS.x, y: TROPHY_POS.y, name: 'Four Years & Counting', prompt: 'Finish what you started' });
+  return list;
+}
+function nearest() {
+  let best = null, bd = 44;
+  for (const it of interactables()) {
+    let d = Math.hypot(it.x - G.player.x, it.y - G.player.y);
+    if (it.kind === 'buddy') d += 20; // Buddy yields: he is ALWAYS underfoot
+    if (d < bd) { bd = d; best = it; }
+  }
+  return best;
+}
+function doInteract() {
+  const it = nearest(); if (!it) return;
+  if (it.kind === 'npc') say(it.d.name, it.d.pages);
+  else if (it.kind === 'buddy') say(DATA.buddy.name, DATA.buddy.pages);
+  else if (it.kind === 'creature') startBattle(it.c);
+  else if (it.kind === 'rumor') { G.caught[it.c.i] = true; SFX.catchJingle();
+    showCard(it.c.d.title, it.c.d.name + ' — ' + it.c.d.species, it.c.d.text); save(); }
+  else if (it.kind === 'keep') { G.keeps[it.i] = true; SFX.pick();
+    const wasLocked = !G.doorOpen && unlocked();
+    showCard(it.k.title, 'Keepsake — ' + it.k.name, it.k.text);
+    if (wasLocked) banner('The Final Room can be opened!', 'Kyle is waiting.', 4);
+    save(); }
+  else if (it.kind === 'sign') say(it.name, [DATA.signs[it.s.id]]);
+  else if (it.kind === 'door') {
+    if (unlocked()) { G.doorOpen = true; SFX.unlock(); banner('The Final Room', "No mimosas this time. You've got this.", 3.5);
+      const di = solids.indexOf(doorSolid); if (di >= 0) solids.splice(di, 1); save(); }
+    else say('The Final Room', ["The door doesn't budge. It wants more of your story first: " + caughtCount() + '/' + DATA.needCreatures + ' memories, ' + keepCount() + '/' + DATA.needKeepsakes + ' keepsakes.',
+      '(A faint smell of mimosa drifts under the door. Judging you.)']);
+  }
+  else if (it.kind === 'ped') {
+    if (it.i === G.puzzleNext) { G.puzzleNext++; SFX.pick();
+      if (G.puzzleNext >= 3) { G.puzzleSolved = true; SFX.unlock(); banner(DATA.puzzle.solved, '', 4); }
+      save();
+    } else if (it.i > G.puzzleNext) { G.puzzleNext = 0; SFX.sad(); say('The Final Room', [DATA.puzzle.wrong, DATA.puzzle.hint]); save(); }
+  }
+  else if (it.kind === 'trophy') { G.mode = 'finale'; G.finaleSeen = true; SFX.win(); save(); }
+}
+const doorSolid = addSolid(DOOR.x, DOOR.y, DOOR.w, DOOR.h);
+
+// ============================================================================
+//  INPUT — keyboard + touch
+// ============================================================================
+const keys = {};
+window.addEventListener('keydown', e => {
+  if (e.key === 'Tab') e.preventDefault();
+  if (e.repeat) return;
+  keys[e.key.toLowerCase()] = true;
+  handleKey(e.key.toLowerCase());
+});
+window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+function handleKey(k) {
+  startMusic();
+  if (k === 'm') { G.muted = !G.muted; return; }
+  if (G.mode === 'title') { if (k === 'e' || k === 'enter' || k === ' ') titleStart(hasSave()); return; }
+  if (G.mode === 'dialog') { if (k === 'e' || k === 'enter' || k === ' ') advanceDialog(); return; }
+  if (G.mode === 'card') { if (k === 'e' || k === 'enter' || k === ' ') { G.card = null; G.mode = 'explore'; } return; }
+  if (G.mode === 'finale') { if (k === 'e' || k === 'enter') { G.mode = 'explore'; banner('Thanks for playing', 'Made with love (and one mimosa joke)', 4); } return; }
+  if (G.mode === 'book') { if (k === 'tab' || k === 'b' || k === 'e') { G.book = false; G.mode = 'explore'; } if (k === 'c') { G.mode = 'explore'; cyclePartner(); G.mode = 'book'; } return; }
+  if (G.mode === 'battle') { if (k >= '1' && k <= '4') battleChoice(+k); return; }
+  if (G.mode === 'explore') {
+    if (k === 'e' || k === 'enter') doInteract();
+    else if (k === 'tab' || k === 'b') { G.book = true; G.mode = 'book'; }
+    else if (k === 'c') cyclePartner();
+  }
+}
+// Touch: left half = joystick, right = context button; UI hit rects.
+const touch = { stick: null, dx: 0, dy: 0 };
+let uiHits = [];
+canvas.addEventListener('pointerdown', e => {
+  startMusic();
+  const x = e.clientX, y = e.clientY;
+  for (const h of uiHits) if (x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h) { h.fn(); return; }
+  if (G.mode === 'title') { titleStart(hasSave()); return; }
+  if (G.mode === 'dialog') { advanceDialog(); return; }
+  if (G.mode === 'card') { G.card = null; G.mode = 'explore'; return; }
+  if (G.mode === 'finale') { G.mode = 'explore'; banner('Thanks for playing', 'Made with love (and one mimosa joke)', 4); return; }
+  if (G.mode === 'book') { G.book = false; G.mode = 'explore'; return; }
+  if (G.mode === 'explore') {
+    if (x < VW * 0.45) { touch.stick = { x, y, id: e.pointerId }; }
+    else doInteract();
+  }
+});
+canvas.addEventListener('pointermove', e => {
+  if (touch.stick && e.pointerId === touch.stick.id) {
+    const dx = e.clientX - touch.stick.x, dy = e.clientY - touch.stick.y, m = Math.hypot(dx, dy);
+    if (m > 8) { touch.dx = dx / m; touch.dy = dy / m; } else { touch.dx = 0; touch.dy = 0; }
+  }
+});
+window.addEventListener('pointerup', e => { if (touch.stick && e.pointerId === touch.stick.id) { touch.stick = null; touch.dx = 0; touch.dy = 0; } });
+
+function titleStart(cont) {
+  if (cont) loadSave();
+  G.mode = 'explore'; startMusic();
+  banner(DATA.title, DATA.subtitle, 4.5);
+}
+
+// ============================================================================
+//  UPDATE
+// ============================================================================
+function collide(x, y) {
+  const r = { x: x - 6, y: y - 4, w: 12, h: 8 };
+  for (const s of solids) if (r.x < s.x + s.w && r.x + r.w > s.x && r.y < s.y + s.h && r.y + r.h > s.y) return true;
+  return false;
+}
+function update(dt) {
+  if (G.banner) { G.banner.t -= dt; if (G.banner.t <= 0) G.banner = null; }
+  G.shake = Math.max(0, G.shake - dt);
+  if (G.mode === 'battle') { updateBattle(dt); return; }
+  if (G.mode !== 'explore' && G.mode !== 'dialog') return;
+
+  const P = G.player;
+  let mx = 0, my = 0;
+  if (G.mode === 'explore') {
+    if (keys['w'] || keys['arrowup']) my -= 1;
+    if (keys['s'] || keys['arrowdown']) my += 1;
+    if (keys['a'] || keys['arrowleft']) mx -= 1;
+    if (keys['d'] || keys['arrowright']) mx += 1;
+    mx += touch.dx; my += touch.dy;
+  }
+  const m = Math.hypot(mx, my);
+  P.moving = m > 0.2;
+  if (P.moving) {
+    mx /= m; my /= m;
+    const sp = 105 * dt;
+    if (!collide(P.x + mx * sp, P.y)) P.x += mx * sp;
+    if (!collide(P.x, P.y + my * sp)) P.y += my * sp;
+    if (Math.abs(mx) > 0.1) P.dir = mx > 0 ? 1 : -1;
+    P.anim += dt * 10;
+    G.buddyTrail.push({ x: P.x, y: P.y });
+    if (G.buddyTrail.length > 22) G.buddyTrail.shift();
+  }
+  // Buddy follows the trail.
+  const target = G.buddyTrail[0] || { x: P.x - 20, y: P.y + 8 };
+  const bdx = target.x - G.buddy.x, bdy = target.y - G.buddy.y, bm = Math.hypot(bdx, bdy);
+  if (bm > 14) { G.buddy.x += bdx / bm * Math.min(130 * dt, bm); G.buddy.y += bdy / bm * Math.min(130 * dt, bm);
+    if (Math.abs(bdx) > 2) G.buddy.dir = bdx > 0 ? 1 : -1; }
+
+  // Creatures wander.
+  for (const c of aliveCreatures()) {
+    if (c.d.special || !c.rad) continue;
+    if (c.pause > 0) { c.pause -= dt; continue; }
+    const dx = c.tx - c.x, dy = c.ty - c.y, d = Math.hypot(dx, dy);
+    if (d < 4) { c.pause = 1 + RNG.f() * 2; c.tx = c.hx + (RNG.f() * 2 - 1) * c.rad; c.ty = c.hy + (RNG.f() * 2 - 1) * c.rad; }
+    else { const sp = Math.min(28 * dt, d); c.x += dx / d * sp; c.y += dy / d * sp; if (Math.abs(dx) > 1) c.dir = dx > 0 ? 1 : -1; }
+  }
+  // Zone banner.
+  if (G.mode === 'explore') {
+    const z = zoneAt(P.x, P.y);
+    if (z && z !== G.zone) { G.zone = z; banner(z.name, z.sub, 3); }
+  }
+}
+</script>
