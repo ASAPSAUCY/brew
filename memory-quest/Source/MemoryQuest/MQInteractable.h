@@ -1,11 +1,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
+// Full include, not a forward declaration: every subclass .cpp passes the
+// inherited InteractionSphere to SetupAttachment, which needs the complete
+// type for the derived-to-base pointer conversion.
+#include "Components/SphereComponent.h"
 #include "GameFramework/Actor.h"
 #include "MQInteractable.generated.h"
 
 class AMQCharacter;
-class USphereComponent;
 class UTextRenderComponent;
 
 /**
