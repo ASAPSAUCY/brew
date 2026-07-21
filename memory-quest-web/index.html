@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Memory Quest — Kyle &amp; Claudia</title>
+<title>Memory Quest — for Claudia</title>
 <style>
   html,body{margin:0;padding:0;background:#1a1626;overflow:hidden;height:100%;touch-action:none;-webkit-user-select:none;user-select:none}
   #game{display:block;width:100vw;height:100vh;image-rendering:pixelated;image-rendering:crisp-edges}
@@ -21,64 +21,64 @@
 
 const DATA = {
   title: 'MEMORY QUEST',
-  subtitle: 'Kyle & Claudia — four years in the making',
-  playerName: 'Kyle',
-  partnerName: 'Claudia',
+  subtitle: 'For Claudia — four years in the making',
+  playerName: 'Claudia',
+  partnerName: 'Kyle',
   buddy: { name: 'Buddy', attackA: 'Zoomies', attackB: 'Heroic Bork', hp: 90,
     pages: [
-      "Woof! Woof woof! (Translation: I am the goodest boy currently on this quest, and we both know it.)",
-      "(Buddy would like you to know that Rumor taught him his best trick: loving Claudia.)"
+      "Woof! Woof woof! (Translation: Kyle told me to take extra good care of you today. I was going to anyway.)",
+      "(Buddy would like you to know that Rumor taught him everything he knows — including his best trick: loving you.)"
     ]},
   needCreatures: 8, needKeepsakes: 6,
 
   creatures: [
     { id:'angelbat', name:'Angelbat', species:'Dark Angel of the Party', zone:'Hallow Grove',
       title:'The Night It Started', hp:80, a:'Wing Flick', b:'Smolder',
-      text:"Halloween, six years ago. A dark angel walked into the party and Kyle forgot his own (fake) badge number. Two more years of 'just friends' followed. Slowest arrest in history." },
+      text:"Halloween, six years ago. You walked into that party as a dark angel and Kyle forgot his own (fake) badge number on the spot. Two more years of 'just friends' followed. Slowest arrest in history." },
     { id:'copcake', name:'Copcake', species:'Off-Duty Cupcake', zone:'Hallow Grove',
       title:'Exhibit B', hp:70, a:'Ticket Tease', b:'Donut Roll',
-      text:"One 'sexy police officer' costume, as worn by Kyle. The handcuffs were plastic. The crush was extremely real." },
+      text:"One 'sexy police officer' costume, as worn by Kyle. The handcuffs were plastic. The crush was extremely real. (His was, anyway. Yours took two more years. He counted.)" },
     { id:'swish', name:'Swish', species:'Court Spirit', zone:'The Courts',
       title:'Same Team, Every Time', hp:70, a:'Crossover', b:'Buzzer Beater',
-      text:"Mid-COVID pickup games with the crew — the weekly excuse to see each other. Somehow, mysteriously, always on the same team." },
+      text:"Mid-COVID pickup games with the crew — the weekly excuse to see each other. Somehow, mysteriously, you two were always on the same team." },
     { id:'chalky', name:'Chalky', species:'8-Ball Oracle', zone:'The Courts',
       title:"Rack 'Em", hp:75, a:'Bank Shot', b:'Scratch',
-      text:"Post-basketball billiards: 'just one game' that became four years of trash talk. Chalky has witnessed every miracle shot and every excuse." },
+      text:"Post-basketball billiards: 'just one game' that became four years of trash talk. Chalky has witnessed every one of your miracle shots — and every one of Kyle's excuses." },
     { id:'flexi', name:'Flexi', species:'Gains Goblin', zone:'The Courts',
-      title:"Claudia's Era", hp:85, a:'Rep Count', b:'Protein Slap',
-      text:"Claudia's current arc: fitness. Flexi respects the grind, spots her lifts, and has formally requested that Kyle stop calling stretching 'cardio'." },
+      title:"Your Era", hp:85, a:'Rep Count', b:'Protein Slap',
+      text:"Your current arc: fitness. Flexi respects the grind, spots your lifts, and has formally requested that Kyle stop calling stretching 'cardio'." },
     { id:'pidge', name:'Pidge', species:'Big City Bird', zone:'Little New York',
       title:'The Birthday Weekend', hp:60, a:'Coo', b:'Crumb Heist',
-      text:"New York, her birthday. A city of eight million people, and they spent the whole weekend only noticing each other. (This pigeon noticed everything.)" },
+      text:"New York, your birthday. A city of eight million people, and you two spent the whole weekend only noticing each other. (This pigeon noticed everything.)" },
     { id:'mimossy', name:'Mimossy', species:'Brunch Spirit', zone:'Little New York',
       title:'Bottomless, 2023', hp:90, a:'Bubbly Burst', b:'Second Round',
-      text:"Bottomless mimosas: Claudia's greatest triumph and swiftest downfall. One escape room did not survive the aftermath. The only room left unfinished... until today?" },
+      text:"Bottomless mimosas: your greatest triumph and swiftest downfall. One escape room did not survive the aftermath. The only room left unfinished... until today?" },
     { id:'seafoodle', name:'Seafoodle', species:'The Usual', zone:'The Apartment',
       title:"Kyle's Order", hp:65, a:'Noodle Whip', b:'Garlic Cloud',
       text:"Seafood pasta. Every restaurant, every city, every time, forever. The waiters have stopped asking. The pasta has achieved legend status." },
     { id:'slice', name:'Slice', species:'Picnic Guardian', zone:'Cozy Park',
       title:'Park Picnics', hp:60, a:'Cheese Pull', b:'Crust Punch',
-      text:"One blanket, one pizza box, zero regrets. The official venue of their best ordinary afternoons." },
+      text:"One blanket, one pizza box, zero regrets. The official venue of your best ordinary afternoons together." },
     { id:'beesting', name:'BeeSting', species:'Hot Honey Bee', zone:'Cozy Park',
       title:'The Official Pizza', hp:55, a:'Buzz', b:'Honey Drizzle',
       text:"Bee sting pizza: hot honey, big feelings. The house pizza of this entire relationship. This bee considers itself a co-founder." },
     { id:'bogey', name:'Bogey', species:'Golf Gremlin', zone:'Cozy Park',
       title:"Kyle's True Rival", hp:85, a:'Shank', b:'Mulligan',
-      text:"Golf gave them long afternoons together — and gave Kyle a lifelong nemesis that lives rent-free on every scorecard. Claudia keeps the receipts." },
+      text:"Golf gave you two long afternoons together — and gave Kyle a lifelong nemesis that lives rent-free on every scorecard. You keep the receipts." },
     { id:'reely', name:'Reely', species:'Matinee Spirit', zone:'Cozy Park',
       title:'Movie #400-and-Something', hp:70, a:'Plot Twist', b:'Spoiler',
-      text:"Claudia picks the movie. Kyle 'just rests his eyes' for a minute. Both of them swear they watched it. Neither of them did." },
+      text:"You pick the movie. Kyle 'just rests his eyes' for a minute. You both swear you watched it. Neither of you did." },
     { id:'poutine', name:'Poutine', species:'Gravy Elemental', zone:'Montreal Corner',
       title:'The Montreal Getaway', hp:75, a:'Gravy Wave', b:'Squeak',
-      text:"Fall colors, old streets, fries drowned in gravy — and proof they travel well together. Claudia's French half called it 'acceptable'. That's high praise." },
+      text:"Fall colors, old streets, fries drowned in gravy — and proof you two travel well together. Your French half called it 'acceptable'. That's high praise." },
     { id:'rumor', name:'Rumor', species:'Forever Good Boy', zone:'Cozy Park', special:true,
       title:'Rumor', hp:1, a:'', b:'',
-      text:"Claudia's best boy. He ran ahead last year, but his pawprints are on everything here. Buddy keeps his spot warm. Forever part of this story." },
+      text:"Your best boy. He ran ahead last year, but his pawprints are on everything here. Buddy keeps his spot warm. Forever part of this story." },
   ],
 
   keepsakes: [
     { id:'mask', name:'Party Mask', title:'The Costume',
-      text:"A little dark-angel mask. Some costumes you never really take off." },
+      text:"Your little dark-angel mask. Some costumes you never really take off." },
     { id:'chalk', name:'Billiard Chalk', title:'House Rules',
       text:"Blue chalk from the hall. For when the trash talk requires precision." },
     { id:'token', name:'Subway Token', title:'One Ride',
@@ -86,47 +86,47 @@ const DATA = {
     { id:'flute', name:'Mimosa Flute', title:'It Has Seen Things',
       text:"An empty flute from the 2023 brunch. Handle with respect. And possibly gloves." },
     { id:'stub', name:'Movie Stub', title:'Feature Presentation',
-      text:"Ticket #400-something. Feature presentation: her head on his shoulder." },
+      text:"Ticket #400-something. Feature presentation: your head on his shoulder." },
     { id:'scorecard', name:'Golf Scorecard', title:'The Eraser Mark',
       text:"One scorecard, one suspicious eraser mark. Kyle denies everything. The gremlin knows." },
-    { id:'leaf', name:'Maple Leaf', title:'Red, Her Color',
-      text:"A perfect red maple leaf from Montreal. Red — her color, her season." },
+    { id:'leaf', name:'Maple Leaf', title:'Red, Your Color',
+      text:"A perfect red maple leaf from Montreal. Red — your color, your season." },
     { id:'pizzabox', name:'Pizza Box', title:'Extra Honey',
       text:"A flattened bee sting pizza box, saved like a trophy. Extra hot honey, obviously." },
   ],
 
   npcs: [
-    { id:'claudia', name:'Claudia', color:'#d9152033', pages: [
-      "Four years, Kyle. From a dark angel and — I'm quoting YOU here — a 'sexy police officer' to... you built me a whole world? Okay. Okay, I'm a little impressed.",
-      "Our memories got loose, by the way. They're wandering around out there — the bee sting pizza, the pigeons, that little golf gremlin you SWEAR isn't based on you.",
-      "Catch them with Buddy, grab our keepsakes, then meet me at The Final Room. We are FINALLY finishing that escape room. I have unfinished business with that place.",
-      "And yes — he has exactly ONE joke about me: half Black, half French, palest girl in every room. It stopped being funny in year two. ...It's still a little funny.",
-      "(She grins.) I'd do all four years again. Even the mimosa thing. ESPECIALLY the mimosa thing. Now go — Buddy's ready." ]},
+    { id:'kyle', name:'Kyle', color:'#0abab544', pages: [
+      "Claudia! Okay. So. I built you a tiny world. Four years — the dark angel, the 'sexy police officer' (still my finest work), all of it. It's ALL in here somewhere.",
+      "Small problem: our memories got loose. They're wandering around out there — the bee sting pizza, the pigeons, a little golf gremlin that is DEFINITELY not based on me.",
+      "Take Buddy and go catch them, grab our keepsakes, then meet me at The Final Room. Yes, THAT escape room. We're finally finishing it. No mimosas this time. I checked.",
+      "Oh, and the ghost up in Hallow Grove? Only thing in this world paler than you. Half Black, half French, palest girl in every room — four years in, still my best material.",
+      "(He grins.) I'd do all four years again. Even the mimosa thing. ESPECIALLY the mimosa thing. Now go — Buddy's ready. I'll be waiting at the door." ]},
     { id:'ghost', name:'Boo-Regard', color:'#b9b9e666', pages: [
-      "BOO! ...Nothing? Tough crowd. You know, I haunted a Halloween party right here, six years back. A dark angel walked in, and some cop in a VERY unregulation uniform forgot his own fake badge number.",
-      "And then they stayed 'just friends' for TWO YEARS. Two! Even ghosts move faster than that, and we are famously dead." ]},
+      "BOO! ...Nothing? Tough crowd. Wait. WAIT. I know you — the dark angel! I haunted that party! Some cop in a VERY unregulation uniform forgot his own fake badge number the second you walked in.",
+      "And then you two stayed 'just friends' for TWO YEARS. Two! Even ghosts move faster than that, and we are famously dead." ]},
     { id:'hoops', name:'Hoops', color:'#e8832666', pages: [
-      "Mid-COVID, this court was the whole social calendar. Same crew every week — and those two 'just friends' somehow always ended up on the same team.",
-      "After hoops it was billiards, every time. 'Just one game.' Sure. Chalky's still holding the 8-ball from their longest argument.",
-      "Claudia's all about the gym these days. Flexi over there has watched Kyle's warm-up routine and has QUESTIONS." ]},
+      "Mid-COVID, this court was the whole social calendar. Same crew every week — and you and that boy somehow ALWAYS ended up on the same team. Suspicious officiating, if you ask me.",
+      "After hoops it was billiards, every time. 'Just one game.' Sure. Chalky's still holding the 8-ball from your longest argument.",
+      "Word is you're all about the gym these days. Flexi over there respects it. Flexi has also watched Kyle's warm-up routine and has QUESTIONS." ]},
     { id:'marlowe', name:'Mr. Marlowe', color:'#20307066', pages: [
-      "Welcome to Little New York. Big birthday weekend, a few years back — two 'friends' checked in... and let's just say they did not check out as friends.",
-      "He asked her properly back at his apartment, right after the trip. Good man. Terrible poker face, but a good man.",
-      "The brunch spirit by the mimosa table? Ask her about 2023. Actually — don't. We're still finding glitter." ]},
+      "Welcome back to Little New York, mademoiselle. Big birthday weekend, a few years back — two 'friends' checked in... and let's just say you two did not check out as friends.",
+      "He asked you properly back at his apartment, right after the trip. Good man. Terrible poker face, but a good man.",
+      "The brunch spirit by the mimosa table remembers 2023 vividly. You... probably remember most of it. We're still finding glitter." ]},
     { id:'fern', name:'Ranger Fern', color:'#2e733266', pages: [
-      "Spring blossoms on this side, fall maples over on the Montreal Corner. Somebody's favorite seasons — both of them. The fries with gravy are for her French half. Oui oui.",
+      "Spring blossoms on this side, fall maples over on the Montreal Corner. Your favorite seasons — both of them. Somebody planted this park with you in mind. Oui oui.",
       "Best picnic in the park: that blanket right there. Bee sting pizza and a seafood pasta, every single time. The bees have become... invested.",
-      "The quiet tree up north is Rumor's spot. Good boy earned a good view. Buddy visits when he thinks no one's looking." ]},
+      "The quiet tree up north is Rumor's spot. Your good boy earned a good view. Buddy visits when he thinks no one's looking." ]},
     { id:'locke', name:'Ms. Locke', color:'#58267066', pages: [
-      "Welcome back to The Final Room. Ah. It's YOU two. I remember the... incident of 2023. We remember it every time it rains, actually.",
+      "Welcome back to The Final Room. Ah. It's YOU. I remember the... incident of 2023. We remember it every time it rains, actually.",
       "New house rule, instituted in your honor: no bottomless brunch before booking. The carpet did not make it.",
       "The door opens only for those who carry their story with them: 8 memories caught, 6 keepsakes found. Inside, press the pedestals in the order it all happened. Then finish what you started." ]},
   ],
 
   signs: {
-    car: "An orange supercar, top down, golden hour. One unforgettable joyride — her in his sunglasses' reflection, fall trees flying by. Sunglasses mandatory.",
+    car: "An orange supercar, top down, golden hour. One unforgettable joyride — fall trees flying by, you in the passenger seat. Sunglasses mandatory.",
     memorial: "A small warm stone under the softest tree in the park. 'RUMOR — forever good boy.'",
-    rug: "The rug in Kyle's apartment. Right here, after New York, he finally asked. She said obviously."
+    rug: "The rug in Kyle's apartment. Right here, after New York, he finally asked. You said obviously."
   },
 
   puzzle: {
@@ -139,10 +139,10 @@ const DATA = {
 
   finale: [
     'FINISHED. FINALLY.',
-    "Four years: every slice of bee sting pizza, every 'one more game', every movie Kyle definitely watched.",
-    "Claudia — from the dark angel at that party to every picnic since: you're Kyle's favorite adventure, his best teammate, and the only escape room he never wants out of.",
+    "Four years: every slice of bee sting pizza, every 'one more game', every movie I definitely watched.",
+    "Claudia — from the dark angel at that party to every picnic since: you're my favorite adventure, my best teammate, and the only escape room I never want out of.",
     "For Rumor. The goodest boy. Buddy's keeping your spot warm. <3",
-    'P.S. Escape room record — unfinished: 1 (mimosas). Finished: 1 (today, together).',
+    'P.S. Escape room record — unfinished: 1 (mimosas). Finished: 1 (today, together). — Love, Kyle',
     'Press E to keep exploring your little world.' ],
 };
 
@@ -711,7 +711,7 @@ const KEEP_POS = { mask: [px(14), px(40)], chalk: [px(214), px(58)], token: [px(
   stub: [px(28), px(128)], scorecard: [px(30), px(150)], leaf: [px(10), px(112)], pizzabox: [px(64), px(126)] };
 const KEEP_COL = { mask: '#7a2030', chalk: '#2a4fc4', token: '#c9a038', flute: '#f2d590', stub: '#e8e0c8',
   scorecard: '#f2f2f2', leaf: '#d92a18', pizzabox: '#c9944a' };
-const NPC_POS = { claudia: [px(104), px(74), 'claudia'], ghost: [px(36), px(34), 'ghost'], hoops: [px(178), px(42), 'hoops'],
+const NPC_POS = { kyle: [px(104), px(74), 'kyle'], ghost: [px(36), px(34), 'ghost'], hoops: [px(178), px(42), 'hoops'],
   marlowe: [px(198), px(128), 'marlowe'], fern: [px(56), px(140), 'fern'], locke: [px(140), px(104), 'locke'] };
 const PEDESTALS = [
   { x: FR.x + 34, y: FR.y + 42, c: '#d97a1e' },
@@ -826,45 +826,146 @@ function startBattle(c) {
   const p = e === -1 ? { n: DATA.buddy.name, a: DATA.buddy.attackA, b: DATA.buddy.attackB, hp: DATA.buddy.hp }
                      : { n: DATA.creatures[e].name, a: DATA.creatures[e].a, b: DATA.creatures[e].b, hp: DATA.creatures[e].hp };
   G.battle = { c, hp: c.d.hp, maxHp: c.d.hp, pHp: p.hp, pMaxHp: p.hp, pName: p.n, pA: p.a, pB: p.b, pE: e,
-    log: ['A wild memory appeared: ' + c.d.name + ' — ' + c.d.species + '!', 'Go, ' + p.n + '! Wear it down, then befriend it with a treat.'] };
+    log: [], q: [], busy: true, intro: 0.9, flash: 0.4,
+    dHp: c.d.hp, dPHp: p.hp, wOfs: 0, pOfs: 0, wBlink: 0, pBlink: 0, wShake: 0, pShake: 0,
+    wAngle: 0, treat: null, parts: [] };
+  bmsg('A wild memory appeared: ' + c.d.name + ' — ' + c.d.species + '!');
+  bmsg('Go, ' + p.n + '! Wear it down, then befriend it with a treat.');
   G.mode = 'battle'; SFX.blip();
 }
-function blog(s) { const l = G.battle.log; l.push(s); while (l.length > 4) l.shift(); }
-function wildTurn() {
+function blog(s) { const l = G.battle.log; l.push(s); while (l.length > 3) l.shift(); }
+function bq(step) { G.battle.q.push(step); }
+function bmsg(s) { bq({ t: 'msg', s }); }
+// Screen positions of the two combatants, shared by animation + render.
+function bgeom() {
+  const B = G.battle;
+  const wspr = CSPR[B.c.d.id], pspr = B.pE === -1 ? SPR.buddy : CSPR[DATA.creatures[B.pE].id];
+  return { wspr, ws: 9, wx: VW * 0.62, wy: VH * 0.14,
+           pspr, ps: 7, px_: VW * 0.08, py_: VH * 0.40 };
+}
+function burstAt(x, y, col, n, heart) {
+  for (let i = 0; i < n; i++) {
+    const a = RNG.f() * Math.PI * 2, sp = 40 + RNG.f() * 130;
+    G.battle.parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 50,
+      life: 0.6 + RNG.f() * 0.5, max: 1, col, r: 3 + RNG.f() * 3, heart });
+  }
+}
+function updateBattle(dt) {
   const B = G.battle; if (!B) return;
-  const atk = RNG.f() < 0.5 ? B.c.d.a : B.c.d.b, dmg = 10 + Math.floor(RNG.f() * 9);
-  B.pHp -= dmg; blog(B.c.d.name + ' used ' + atk + '! ' + B.pName + ' takes ' + dmg + '.'); SFX.hurt(); G.shake = 0.25;
-  if (B.pHp <= 0) endBattle(B.pName + ' is all tuckered out! ' + B.c.d.name + ' scampers off... for now.', true);
+  B.flash = Math.max(0, B.flash - dt);
+  B.wBlink = Math.max(0, B.wBlink - dt); B.pBlink = Math.max(0, B.pBlink - dt);
+  B.wShake = Math.max(0, B.wShake - dt); B.pShake = Math.max(0, B.pShake - dt);
+  // HP bars drain smoothly toward true values.
+  const drain = dt * 1.4;
+  B.dHp += Math.max(-B.maxHp * drain, Math.min(B.maxHp * drain, B.hp - B.dHp));
+  B.dPHp += Math.max(-B.pMaxHp * drain, Math.min(B.pMaxHp * drain, B.pHp - B.dPHp));
+  for (const p of B.parts) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; if (!p.num) p.vy += 160 * dt; }
+  B.parts = B.parts.filter(p => p.life > 0);
+  if (B.intro > 0) { B.intro -= dt; if (B.intro > 0) return; }
+  const s = B.q[0];
+  if (!s) { B.busy = false; B.wOfs = 0; B.pOfs = 0; return; }
+  B.busy = true;
+  const first = s.e === undefined; s.e = (s.e || 0) + dt;
+  const g = bgeom();
+  const wcx = g.wx + g.wspr.w * g.ws / 2, wcy = g.wy + g.wspr.h * g.ws / 2;
+  const pcx = g.px_ + g.pspr.w * g.ps / 2, pcy = g.py_ + g.pspr.h * g.ps / 2;
+  let done = false;
+  if (s.t === 'msg') {
+    if (first) { blog(''); SFX.page(); }
+    const n = Math.floor(s.e * 55);
+    B.log[B.log.length - 1] = s.s.slice(0, n);
+    done = n >= s.s.length + 16;                 // short beat after the line lands
+  } else if (s.t === 'pause') {
+    done = s.e >= (s.dur || 0.4);
+  } else if (s.t === 'lunge') {                  // hop toward the opponent and back
+    const d = 0.34, k = Math.min(1, s.e / d), arc = Math.sin(k * Math.PI) * 48;
+    if (s.who === 'p') B.pOfs = arc; else B.wOfs = -arc;
+    if (first) SFX.blip();
+    done = s.e >= d;
+  } else if (s.t === 'hit') {                    // impact: blink + shake + burst + damage number
+    if (first) {
+      if (s.who === 'w') {
+        B.hp = s.to; B.wBlink = 0.5; B.wShake = 0.4;
+        burstAt(wcx, wcy, '#fff2b0', 10);
+        B.parts.push({ x: wcx, y: g.wy - 6, vx: 0, vy: -46, life: 1, max: 1, col: '#ffe9a8', num: s.dmg });
+        SFX.hit();
+      } else {
+        B.pHp = s.to; B.pBlink = 0.5; B.pShake = 0.4;
+        burstAt(pcx, pcy, '#ff9aa8', 10);
+        B.parts.push({ x: pcx, y: g.py_ - 6, vx: 0, vy: -46, life: 1, max: 1, col: '#ff8a98', num: s.dmg });
+        SFX.hurt();
+      }
+      G.shake = 0.22;
+    }
+    done = s.e >= 0.55;
+  } else if (s.t === 'treat') {                  // treat arcs across the field
+    const d = 0.8; B.treat = { k: Math.min(1, s.e / d) };
+    if (first) SFX.pick();
+    if (s.e >= d) { B.treat = null; done = true; }
+  } else if (s.t === 'wobble') {                 // the will-it-won't-it wiggle
+    const d = 1.7;
+    B.wAngle = Math.sin(s.e * 9) * 0.22 * Math.max(0, 1 - s.e / (d * 1.15));
+    if (first) s.tick = 0;
+    const tick = Math.floor(s.e / 0.38);
+    if (tick > s.tick) { s.tick = tick; SFX.blip(); }
+    if (s.e >= d) { B.wAngle = 0; done = true; }
+  } else if (s.t === 'burst') {                  // befriended! hearts everywhere
+    if (first) { burstAt(wcx, wcy, '#ff6a8a', 16, true); burstAt(wcx, wcy, '#ffe9a8', 8); SFX.catchJingle(); }
+    done = s.e >= 1.0;
+  } else if (s.t === 'do') {
+    s.fn(); done = true;
+  }
+  if (done) B.q.shift();
+}
+function wildTurnSteps() {
+  const B = G.battle, D = B.c.d;
+  const atk = RNG.f() < 0.5 ? D.a : D.b, dmg = 10 + Math.floor(RNG.f() * 9);
+  const to = B.pHp - dmg;
+  bmsg(D.name + ' used ' + atk + '! ' + B.pName + ' takes ' + dmg + '.');
+  bq({ t: 'lunge', who: 'w' });
+  bq({ t: 'hit', who: 'p', to, dmg });
+  if (to <= 0) {
+    bmsg(B.pName + ' is all tuckered out!');
+    bq({ t: 'do', fn: () => endBattle(B.pName + ' is all tuckered out! ' + D.name + ' scampers off... for now.', true) });
+  }
 }
 function endBattle(line, sadSound) {
   G.battle = null; G.mode = 'explore'; banner(line, '', 3.4); if (sadSound) SFX.sad();
 }
 function battleChoice(n) {
-  const B = G.battle; if (!B) return;
+  const B = G.battle; if (!B || B.busy || B.q.length) return;
   const D = B.c.d;
-  if (n === 1) {
-    const dmg = 18 + Math.floor(RNG.f() * 13); B.hp = Math.max(1, B.hp - dmg);
-    blog(B.pName + ' used ' + B.pA + '! ' + D.name + "'s spirit drops by " + dmg + '.'); SFX.hit(); G.shake = 0.2;
-    if (B.hp === 1) blog(D.name + ' is all tired out! Treat time!');
-    wildTurn();
-  } else if (n === 2) {
-    const dmg = 6 + Math.floor(RNG.f() * 39); B.hp = Math.max(1, B.hp - dmg);
-    blog(dmg < 14 ? B.pName + ' used ' + B.pB + '... it kind of whiffed. ' + dmg + ' spirit.'
-                  : B.pName + ' used ' + B.pB + '! Huge! ' + D.name + "'s spirit drops by " + dmg + '.');
-    SFX.hit(); G.shake = 0.3;
-    if (B.hp === 1) blog(D.name + ' is all tired out! Treat time!');
-    wildTurn();
+  if (n === 1 || n === 2) {
+    const dmg = n === 1 ? 18 + Math.floor(RNG.f() * 13) : 6 + Math.floor(RNG.f() * 39);
+    const to = Math.max(1, B.hp - dmg);
+    if (n === 1) bmsg(B.pName + ' used ' + B.pA + '! ' + D.name + "'s spirit drops by " + dmg + '.');
+    else bmsg(dmg < 14 ? B.pName + ' used ' + B.pB + '... it kind of whiffed. ' + dmg + ' spirit.'
+                       : B.pName + ' used ' + B.pB + '! Huge! ' + D.name + "'s spirit drops by " + dmg + '.');
+    bq({ t: 'lunge', who: 'p' });
+    bq({ t: 'hit', who: 'w', to, dmg });
+    if (to === 1 && B.hp !== 1) bmsg(D.name + ' is all tired out! Treat time!');
+    wildTurnSteps();
   } else if (n === 3) {
     let chance = Math.min(0.2 + 0.6 * (1 - B.hp / B.maxHp), 0.92); if (RNG.forceCatch) chance = 1;
+    bmsg('You offer a treat. ' + D.name + ' sniffs it...');
+    bq({ t: 'treat' });
+    bq({ t: 'wobble' });
     if (RNG.f() < chance) {
-      G.caught[B.c.i] = true; G.party.push(B.c.i); SFX.catchJingle();
-      const wasLocked = !G.doorOpen && unlocked();
-      G.battle = null;
-      showCard(D.title, D.name + ' — ' + D.species + ' — joined your team!', D.text);
-      if (wasLocked) banner('The Final Room can be opened!', 'Claudia is waiting.', 4);
-      save();
-    } else { blog(D.name + ' wriggles free of the treat! So dramatic.'); wildTurn(); }
-  } else if (n === 4) endBattle('You wave goodbye. ' + D.name + ' waves back. Probably.', false);
+      bq({ t: 'burst' });
+      bq({ t: 'pause', dur: 0.4 });
+      bq({ t: 'do', fn: () => {
+        G.caught[B.c.i] = true; G.party.push(B.c.i);
+        const wasLocked = !G.doorOpen && unlocked();
+        G.battle = null;
+        showCard(D.title, D.name + ' — ' + D.species + ' — joined your team!', D.text);
+        if (wasLocked) banner('The Final Room can be opened!', 'Kyle is waiting.', 4);
+        save();
+      } });
+    } else { bmsg(D.name + ' wriggles free of the treat! So dramatic.'); wildTurnSteps(); }
+  } else if (n === 4) {
+    bmsg('You wave goodbye...');
+    bq({ t: 'do', fn: () => endBattle('You wave goodbye. ' + D.name + ' waves back. Probably.', false) });
+  }
 }
 function cyclePartner() {
   if (G.mode !== 'explore') return;
@@ -915,7 +1016,7 @@ function doInteract() {
   else if (it.kind === 'keep') { G.keeps[it.i] = true; SFX.pick();
     const wasLocked = !G.doorOpen && unlocked();
     showCard(it.k.title, 'Keepsake — ' + it.k.name, it.k.text);
-    if (wasLocked) banner('The Final Room can be opened!', 'Claudia is waiting.', 4);
+    if (wasLocked) banner('The Final Room can be opened!', 'Kyle is waiting.', 4);
     save(); }
   else if (it.kind === 'sign') say(it.name, [DATA.signs[it.s.id]]);
   else if (it.kind === 'door') {
@@ -1002,6 +1103,7 @@ function collide(x, y) {
 function update(dt) {
   if (G.banner) { G.banner.t -= dt; if (G.banner.t <= 0) G.banner = null; }
   G.shake = Math.max(0, G.shake - dt);
+  if (G.mode === 'battle') { updateBattle(dt); return; }
   if (G.mode !== 'explore' && G.mode !== 'dialog') return;
 
   const P = G.player;
@@ -1143,7 +1245,7 @@ function drawWorld() {
   }});
   items.push({ sortY: P.y, draw: () => {
     const b = P.moving ? Math.abs(Math.sin(P.anim)) * -2 : 0;
-    dspr(SPR.kyle, P.x, P.y, 1.5, P.dir < 0, b);
+    dspr(SPR.claudia, P.x, P.y, 1.5, P.dir < 0, b);
   }});
   if (!G.doorOpen) items.push({ sortY: DOOR.y + DOOR.h, draw: () => {
     rr(DOOR.x, DOOR.y - 14, DOOR.w, DOOR.h + 14, '#b3202c');
@@ -1211,39 +1313,97 @@ function ui() {
   if (M === 'finale') drawFinale();
 }
 
+function hpPanel(x, y, w, name, hp, max, border, nameCol) {
+  panel(x, y, w, 66, border);
+  txt(name, x + 14, y + 8, 16, nameCol, 'left', true);
+  const bw = w - 28, pct = Math.max(0, Math.min(1, hp / max));
+  ctx.fillStyle = '#26222e'; ctx.fillRect(x + 14, y + 36, bw, 12);
+  ctx.fillStyle = pct > 0.5 ? '#3fd96a' : pct > 0.25 ? '#f2c024' : '#e83a48';
+  ctx.fillRect(x + 14, y + 36, bw * pct, 12);
+  txt(Math.max(0, Math.round(hp)) + ' / ' + max, x + w - 14, y + 50, 11, 'rgba(255,255,255,0.6)', 'right');
+}
+
 function drawBattle() {
-  const B = G.battle;
-  ctx.fillStyle = '#0d0b16'; ctx.fillRect(0, 0, VW, VH);
+  const B = G.battle, now = performance.now();
+  const grd = ctx.createLinearGradient(0, 0, 0, VH);
+  grd.addColorStop(0, '#171226'); grd.addColorStop(1, '#0d0b16');
+  ctx.fillStyle = grd; ctx.fillRect(0, 0, VW, VH);
+  if (G.shake > 0) ctx.translate(Math.sin(now / 21) * 6 * G.shake, Math.cos(now / 17) * 5 * G.shake);
   ctx.imageSmoothingEnabled = false;
-  const wspr = CSPR[B.c.d.id], bobW = Math.sin(performance.now() / 220) * 4;
-  ctx.drawImage(wspr.img, VW * 0.62, VH * 0.10 + bobW, wspr.w * 9, wspr.h * 9);
-  const pspr = B.pE === -1 ? SPR.buddy : CSPR[DATA.creatures[B.pE].id];
-  const bobP = Math.sin(performance.now() / 260 + 2) * 3;
-  ctx.drawImage(pspr.flip, VW * 0.08, VH * 0.34 + bobP, pspr.w * 7, pspr.h * 7);
 
-  panel(VW * 0.55, 18, VW * 0.42, 66, '#f2c85a');
-  txt(B.c.d.name + ' — ' + B.c.d.species, VW * 0.55 + 14, 26, 16, '#ffe9a8', 'left', true);
-  const sw = VW * 0.42 - 28;
-  ctx.fillStyle = '#333'; ctx.fillRect(VW * 0.55 + 14, 54, sw, 12);
-  ctx.fillStyle = '#3fd96a'; ctx.fillRect(VW * 0.55 + 14, 54, sw * B.hp / B.maxHp, 12);
+  // Slide the combatants in from opposite edges during the intro.
+  const ik = Math.max(0, B.intro) / 0.9, slide = ik * ik * VW * 0.55;
+  const g = bgeom(), wspr = g.wspr, ws = g.ws, pspr = g.pspr, ps = g.ps;
+  const wx = g.wx + B.wOfs + slide, wy = g.wy + Math.sin(now / 220) * 4;
+  const px0 = g.px_ + B.pOfs - slide, py0 = g.py_ + Math.sin(now / 260 + 2) * 3;
 
-  panel(VW * 0.03, VH * 0.30, VW * 0.34, 60, '#d94a56');
-  txt(B.pName, VW * 0.03 + 14, VH * 0.30 + 8, 16, '#ffd6da', 'left', true);
-  const pw = VW * 0.34 - 28;
-  ctx.fillStyle = '#333'; ctx.fillRect(VW * 0.03 + 14, VH * 0.30 + 36, pw, 12);
-  ctx.fillStyle = '#e85a68'; ctx.fillRect(VW * 0.03 + 14, VH * 0.30 + 36, pw * Math.max(0, B.pHp) / B.pMaxHp, 12);
+  // Ground ellipses under each fighter.
+  ctx.fillStyle = '#1e1a32';
+  ctx.beginPath(); ctx.ellipse(g.wx + wspr.w * ws / 2, g.wy + wspr.h * ws + 12, wspr.w * ws * 0.58, 15, 0, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(g.px_ + pspr.w * ps / 2, g.py_ + pspr.h * ps + 10, pspr.w * ps * 0.58, 12, 0, 0, 7); ctx.fill();
 
-  let ly = VH - 320;
-  for (const line of B.log) { txt(line, 24, ly, 14, '#e8e6da'); ly += 22; }
+  // Wild memory (blinks when hit, shakes, wobbles during a treat attempt).
+  const wshk = Math.sin(now / 19) * 7 * B.wShake;
+  if (!(B.wBlink > 0 && Math.floor(B.wBlink * 16) % 2 === 0)) {
+    ctx.save();
+    ctx.translate(wx + wspr.w * ws / 2 + wshk, wy + wspr.h * ws / 2);
+    ctx.rotate(B.wAngle || 0);
+    ctx.drawImage(wspr.img, -wspr.w * ws / 2, -wspr.h * ws / 2, wspr.w * ws, wspr.h * ws);
+    ctx.restore();
+  }
+  // Your partner.
+  const pshk = Math.sin(now / 19) * 7 * B.pShake;
+  if (!(B.pBlink > 0 && Math.floor(B.pBlink * 16) % 2 === 0))
+    ctx.drawImage(pspr.flip, px0 + pshk, py0, pspr.w * ps, pspr.h * ps);
 
-  const bx = 20, bw = VW - 40, bh = 44;
-  const opts = [
-    ['1 — ' + B.pA + '  (steady)', () => battleChoice(1)],
-    ['2 — ' + B.pB + '  (wild swing)', () => battleChoice(2)],
-    ['3 — Give it a treat  (befriend it — joins your team!)', () => battleChoice(3)],
-    ['4 — Wave goodbye', () => battleChoice(4)],
-  ];
-  opts.forEach((o, i) => button(bx, VH - 220 + i * (bh + 8), bw, bh, o[0], o[1], i === 2));
+  // The flying treat.
+  if (B.treat) {
+    const k = B.treat.k;
+    const tx = (px0 + pspr.w * ps) * (1 - k) + (wx + wspr.w * ws / 2) * k;
+    const ty = (py0 + 12) * (1 - k) + (wy + wspr.h * ws * 0.6) * k - Math.sin(k * Math.PI) * 130;
+    ctx.save(); ctx.translate(tx, ty); ctx.rotate(k * 9);
+    ctx.fillStyle = '#e8b95d'; ctx.fillRect(-6, -4, 12, 8);
+    ctx.fillStyle = '#a86f2e'; ctx.fillRect(-4, -2, 3, 3); ctx.fillRect(1, 0, 3, 3);
+    ctx.restore();
+  }
+  // Particles: impact sparks, hearts, floating damage numbers.
+  for (const p of B.parts) {
+    ctx.globalAlpha = Math.max(0, Math.min(1, p.life / p.max));
+    if (p.num !== undefined) txt('-' + p.num, p.x, p.y, 26, p.col, 'center', true);
+    else if (p.heart) txt('♥', p.x, p.y, 17, p.col, 'center', true);
+    else { ctx.fillStyle = p.col; ctx.fillRect(p.x - p.r / 2, p.y - p.r / 2, p.r, p.r); }
+    ctx.globalAlpha = 1;
+  }
+
+  hpPanel(VW * 0.55, 18, VW * 0.42, B.c.d.name + ' — ' + B.c.d.species, B.dHp, B.maxHp, '#f2c85a', '#ffe9a8');
+  hpPanel(VW * 0.03, VH * 0.30, VW * 0.34, B.pName, B.dPHp, B.pMaxHp, '#d94a56', '#ffd6da');
+
+  // Message box.
+  panel(20, VH - 336, VW - 40, 96, '#3a3450');
+  let ly = VH - 322;
+  for (const line of B.log) { txt(line, 34, ly, 15, '#e8e6da'); ly += 24; }
+
+  const ready = !B.busy && !B.q.length && B.intro <= 0;
+  if (ready) {
+    const bx = 20, bw = VW - 40, bh = 44;
+    const opts = [
+      ['1 — ' + B.pA + '  (steady)', () => battleChoice(1)],
+      ['2 — ' + B.pB + '  (wild swing)', () => battleChoice(2)],
+      ['3 — Give it a treat  (befriend it — joins your team!)', () => battleChoice(3)],
+      ['4 — Wave goodbye', () => battleChoice(4)],
+    ];
+    opts.forEach((o, i) => button(bx, VH - 220 + i * (bh + 8), bw, bh, o[0], o[1], i === 2));
+  } else {
+    const dots = '.'.repeat(1 + Math.floor(now / 350) % 3);
+    txt(dots, VW - 44, VH - 262, 22, 'rgba(255,255,255,0.6)', 'right', true);
+  }
+  // White flash on battle start.
+  if (B.flash > 0) {
+    ctx.globalAlpha = Math.min(1, B.flash * 2.5);
+    ctx.fillStyle = '#fff'; ctx.fillRect(-30, -30, VW + 60, VH + 60);
+    ctx.globalAlpha = 1;
+  }
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 }
 
 function drawCard() {
@@ -1350,7 +1510,8 @@ window.__mq = {
   nearest: () => { const it = nearest(); return it ? it.kind + ':' + it.name : null; },
   state: () => ({ mode: G.mode, x: Math.round(G.player.x), y: Math.round(G.player.y),
     caught: caughtCount(), keeps: keepCount(), door: G.doorOpen, next: G.puzzleNext,
-    solved: G.puzzleSolved, finale: G.finaleSeen, party: G.party.map(partyName), active: partyName(G.party[G.active]) }),
+    solved: G.puzzleSolved, finale: G.finaleSeen, party: G.party.map(partyName), active: partyName(G.party[G.active]),
+    busy: !!(G.battle && (G.battle.busy || G.battle.q.length || G.battle.intro > 0)) }),
 };
 let last = 0;
 function loop(t) {

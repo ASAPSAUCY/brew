@@ -95,7 +95,7 @@ function drawWorld() {
   }});
   items.push({ sortY: P.y, draw: () => {
     const b = P.moving ? Math.abs(Math.sin(P.anim)) * -2 : 0;
-    dspr(SPR.kyle, P.x, P.y, 1.5, P.dir < 0, b);
+    dspr(SPR.claudia, P.x, P.y, 1.5, P.dir < 0, b);
   }});
   if (!G.doorOpen) items.push({ sortY: DOOR.y + DOOR.h, draw: () => {
     rr(DOOR.x, DOOR.y - 14, DOOR.w, DOOR.h + 14, '#b3202c');
@@ -163,39 +163,97 @@ function ui() {
   if (M === 'finale') drawFinale();
 }
 
+function hpPanel(x, y, w, name, hp, max, border, nameCol) {
+  panel(x, y, w, 66, border);
+  txt(name, x + 14, y + 8, 16, nameCol, 'left', true);
+  const bw = w - 28, pct = Math.max(0, Math.min(1, hp / max));
+  ctx.fillStyle = '#26222e'; ctx.fillRect(x + 14, y + 36, bw, 12);
+  ctx.fillStyle = pct > 0.5 ? '#3fd96a' : pct > 0.25 ? '#f2c024' : '#e83a48';
+  ctx.fillRect(x + 14, y + 36, bw * pct, 12);
+  txt(Math.max(0, Math.round(hp)) + ' / ' + max, x + w - 14, y + 50, 11, 'rgba(255,255,255,0.6)', 'right');
+}
+
 function drawBattle() {
-  const B = G.battle;
-  ctx.fillStyle = '#0d0b16'; ctx.fillRect(0, 0, VW, VH);
+  const B = G.battle, now = performance.now();
+  const grd = ctx.createLinearGradient(0, 0, 0, VH);
+  grd.addColorStop(0, '#171226'); grd.addColorStop(1, '#0d0b16');
+  ctx.fillStyle = grd; ctx.fillRect(0, 0, VW, VH);
+  if (G.shake > 0) ctx.translate(Math.sin(now / 21) * 6 * G.shake, Math.cos(now / 17) * 5 * G.shake);
   ctx.imageSmoothingEnabled = false;
-  const wspr = CSPR[B.c.d.id], bobW = Math.sin(performance.now() / 220) * 4;
-  ctx.drawImage(wspr.img, VW * 0.62, VH * 0.10 + bobW, wspr.w * 9, wspr.h * 9);
-  const pspr = B.pE === -1 ? SPR.buddy : CSPR[DATA.creatures[B.pE].id];
-  const bobP = Math.sin(performance.now() / 260 + 2) * 3;
-  ctx.drawImage(pspr.flip, VW * 0.08, VH * 0.34 + bobP, pspr.w * 7, pspr.h * 7);
 
-  panel(VW * 0.55, 18, VW * 0.42, 66, '#f2c85a');
-  txt(B.c.d.name + ' — ' + B.c.d.species, VW * 0.55 + 14, 26, 16, '#ffe9a8', 'left', true);
-  const sw = VW * 0.42 - 28;
-  ctx.fillStyle = '#333'; ctx.fillRect(VW * 0.55 + 14, 54, sw, 12);
-  ctx.fillStyle = '#3fd96a'; ctx.fillRect(VW * 0.55 + 14, 54, sw * B.hp / B.maxHp, 12);
+  // Slide the combatants in from opposite edges during the intro.
+  const ik = Math.max(0, B.intro) / 0.9, slide = ik * ik * VW * 0.55;
+  const g = bgeom(), wspr = g.wspr, ws = g.ws, pspr = g.pspr, ps = g.ps;
+  const wx = g.wx + B.wOfs + slide, wy = g.wy + Math.sin(now / 220) * 4;
+  const px0 = g.px_ + B.pOfs - slide, py0 = g.py_ + Math.sin(now / 260 + 2) * 3;
 
-  panel(VW * 0.03, VH * 0.30, VW * 0.34, 60, '#d94a56');
-  txt(B.pName, VW * 0.03 + 14, VH * 0.30 + 8, 16, '#ffd6da', 'left', true);
-  const pw = VW * 0.34 - 28;
-  ctx.fillStyle = '#333'; ctx.fillRect(VW * 0.03 + 14, VH * 0.30 + 36, pw, 12);
-  ctx.fillStyle = '#e85a68'; ctx.fillRect(VW * 0.03 + 14, VH * 0.30 + 36, pw * Math.max(0, B.pHp) / B.pMaxHp, 12);
+  // Ground ellipses under each fighter.
+  ctx.fillStyle = '#1e1a32';
+  ctx.beginPath(); ctx.ellipse(g.wx + wspr.w * ws / 2, g.wy + wspr.h * ws + 12, wspr.w * ws * 0.58, 15, 0, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(g.px_ + pspr.w * ps / 2, g.py_ + pspr.h * ps + 10, pspr.w * ps * 0.58, 12, 0, 0, 7); ctx.fill();
 
-  let ly = VH - 320;
-  for (const line of B.log) { txt(line, 24, ly, 14, '#e8e6da'); ly += 22; }
+  // Wild memory (blinks when hit, shakes, wobbles during a treat attempt).
+  const wshk = Math.sin(now / 19) * 7 * B.wShake;
+  if (!(B.wBlink > 0 && Math.floor(B.wBlink * 16) % 2 === 0)) {
+    ctx.save();
+    ctx.translate(wx + wspr.w * ws / 2 + wshk, wy + wspr.h * ws / 2);
+    ctx.rotate(B.wAngle || 0);
+    ctx.drawImage(wspr.img, -wspr.w * ws / 2, -wspr.h * ws / 2, wspr.w * ws, wspr.h * ws);
+    ctx.restore();
+  }
+  // Your partner.
+  const pshk = Math.sin(now / 19) * 7 * B.pShake;
+  if (!(B.pBlink > 0 && Math.floor(B.pBlink * 16) % 2 === 0))
+    ctx.drawImage(pspr.flip, px0 + pshk, py0, pspr.w * ps, pspr.h * ps);
 
-  const bx = 20, bw = VW - 40, bh = 44;
-  const opts = [
-    ['1 — ' + B.pA + '  (steady)', () => battleChoice(1)],
-    ['2 — ' + B.pB + '  (wild swing)', () => battleChoice(2)],
-    ['3 — Give it a treat  (befriend it — joins your team!)', () => battleChoice(3)],
-    ['4 — Wave goodbye', () => battleChoice(4)],
-  ];
-  opts.forEach((o, i) => button(bx, VH - 220 + i * (bh + 8), bw, bh, o[0], o[1], i === 2));
+  // The flying treat.
+  if (B.treat) {
+    const k = B.treat.k;
+    const tx = (px0 + pspr.w * ps) * (1 - k) + (wx + wspr.w * ws / 2) * k;
+    const ty = (py0 + 12) * (1 - k) + (wy + wspr.h * ws * 0.6) * k - Math.sin(k * Math.PI) * 130;
+    ctx.save(); ctx.translate(tx, ty); ctx.rotate(k * 9);
+    ctx.fillStyle = '#e8b95d'; ctx.fillRect(-6, -4, 12, 8);
+    ctx.fillStyle = '#a86f2e'; ctx.fillRect(-4, -2, 3, 3); ctx.fillRect(1, 0, 3, 3);
+    ctx.restore();
+  }
+  // Particles: impact sparks, hearts, floating damage numbers.
+  for (const p of B.parts) {
+    ctx.globalAlpha = Math.max(0, Math.min(1, p.life / p.max));
+    if (p.num !== undefined) txt('-' + p.num, p.x, p.y, 26, p.col, 'center', true);
+    else if (p.heart) txt('♥', p.x, p.y, 17, p.col, 'center', true);
+    else { ctx.fillStyle = p.col; ctx.fillRect(p.x - p.r / 2, p.y - p.r / 2, p.r, p.r); }
+    ctx.globalAlpha = 1;
+  }
+
+  hpPanel(VW * 0.55, 18, VW * 0.42, B.c.d.name + ' — ' + B.c.d.species, B.dHp, B.maxHp, '#f2c85a', '#ffe9a8');
+  hpPanel(VW * 0.03, VH * 0.30, VW * 0.34, B.pName, B.dPHp, B.pMaxHp, '#d94a56', '#ffd6da');
+
+  // Message box.
+  panel(20, VH - 336, VW - 40, 96, '#3a3450');
+  let ly = VH - 322;
+  for (const line of B.log) { txt(line, 34, ly, 15, '#e8e6da'); ly += 24; }
+
+  const ready = !B.busy && !B.q.length && B.intro <= 0;
+  if (ready) {
+    const bx = 20, bw = VW - 40, bh = 44;
+    const opts = [
+      ['1 — ' + B.pA + '  (steady)', () => battleChoice(1)],
+      ['2 — ' + B.pB + '  (wild swing)', () => battleChoice(2)],
+      ['3 — Give it a treat  (befriend it — joins your team!)', () => battleChoice(3)],
+      ['4 — Wave goodbye', () => battleChoice(4)],
+    ];
+    opts.forEach((o, i) => button(bx, VH - 220 + i * (bh + 8), bw, bh, o[0], o[1], i === 2));
+  } else {
+    const dots = '.'.repeat(1 + Math.floor(now / 350) % 3);
+    txt(dots, VW - 44, VH - 262, 22, 'rgba(255,255,255,0.6)', 'right', true);
+  }
+  // White flash on battle start.
+  if (B.flash > 0) {
+    ctx.globalAlpha = Math.min(1, B.flash * 2.5);
+    ctx.fillStyle = '#fff'; ctx.fillRect(-30, -30, VW + 60, VH + 60);
+    ctx.globalAlpha = 1;
+  }
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 }
 
 function drawCard() {
@@ -302,7 +360,8 @@ window.__mq = {
   nearest: () => { const it = nearest(); return it ? it.kind + ':' + it.name : null; },
   state: () => ({ mode: G.mode, x: Math.round(G.player.x), y: Math.round(G.player.y),
     caught: caughtCount(), keeps: keepCount(), door: G.doorOpen, next: G.puzzleNext,
-    solved: G.puzzleSolved, finale: G.finaleSeen, party: G.party.map(partyName), active: partyName(G.party[G.active]) }),
+    solved: G.puzzleSolved, finale: G.finaleSeen, party: G.party.map(partyName), active: partyName(G.party[G.active]),
+    busy: !!(G.battle && (G.battle.busy || G.battle.q.length || G.battle.intro > 0)) }),
 };
 let last = 0;
 function loop(t) {

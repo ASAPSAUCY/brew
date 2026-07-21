@@ -98,45 +98,146 @@ function startBattle(c) {
   const p = e === -1 ? { n: DATA.buddy.name, a: DATA.buddy.attackA, b: DATA.buddy.attackB, hp: DATA.buddy.hp }
                      : { n: DATA.creatures[e].name, a: DATA.creatures[e].a, b: DATA.creatures[e].b, hp: DATA.creatures[e].hp };
   G.battle = { c, hp: c.d.hp, maxHp: c.d.hp, pHp: p.hp, pMaxHp: p.hp, pName: p.n, pA: p.a, pB: p.b, pE: e,
-    log: ['A wild memory appeared: ' + c.d.name + ' — ' + c.d.species + '!', 'Go, ' + p.n + '! Wear it down, then befriend it with a treat.'] };
+    log: [], q: [], busy: true, intro: 0.9, flash: 0.4,
+    dHp: c.d.hp, dPHp: p.hp, wOfs: 0, pOfs: 0, wBlink: 0, pBlink: 0, wShake: 0, pShake: 0,
+    wAngle: 0, treat: null, parts: [] };
+  bmsg('A wild memory appeared: ' + c.d.name + ' — ' + c.d.species + '!');
+  bmsg('Go, ' + p.n + '! Wear it down, then befriend it with a treat.');
   G.mode = 'battle'; SFX.blip();
 }
-function blog(s) { const l = G.battle.log; l.push(s); while (l.length > 4) l.shift(); }
-function wildTurn() {
+function blog(s) { const l = G.battle.log; l.push(s); while (l.length > 3) l.shift(); }
+function bq(step) { G.battle.q.push(step); }
+function bmsg(s) { bq({ t: 'msg', s }); }
+// Screen positions of the two combatants, shared by animation + render.
+function bgeom() {
+  const B = G.battle;
+  const wspr = CSPR[B.c.d.id], pspr = B.pE === -1 ? SPR.buddy : CSPR[DATA.creatures[B.pE].id];
+  return { wspr, ws: 9, wx: VW * 0.62, wy: VH * 0.14,
+           pspr, ps: 7, px_: VW * 0.08, py_: VH * 0.40 };
+}
+function burstAt(x, y, col, n, heart) {
+  for (let i = 0; i < n; i++) {
+    const a = RNG.f() * Math.PI * 2, sp = 40 + RNG.f() * 130;
+    G.battle.parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 50,
+      life: 0.6 + RNG.f() * 0.5, max: 1, col, r: 3 + RNG.f() * 3, heart });
+  }
+}
+function updateBattle(dt) {
   const B = G.battle; if (!B) return;
-  const atk = RNG.f() < 0.5 ? B.c.d.a : B.c.d.b, dmg = 10 + Math.floor(RNG.f() * 9);
-  B.pHp -= dmg; blog(B.c.d.name + ' used ' + atk + '! ' + B.pName + ' takes ' + dmg + '.'); SFX.hurt(); G.shake = 0.25;
-  if (B.pHp <= 0) endBattle(B.pName + ' is all tuckered out! ' + B.c.d.name + ' scampers off... for now.', true);
+  B.flash = Math.max(0, B.flash - dt);
+  B.wBlink = Math.max(0, B.wBlink - dt); B.pBlink = Math.max(0, B.pBlink - dt);
+  B.wShake = Math.max(0, B.wShake - dt); B.pShake = Math.max(0, B.pShake - dt);
+  // HP bars drain smoothly toward true values.
+  const drain = dt * 1.4;
+  B.dHp += Math.max(-B.maxHp * drain, Math.min(B.maxHp * drain, B.hp - B.dHp));
+  B.dPHp += Math.max(-B.pMaxHp * drain, Math.min(B.pMaxHp * drain, B.pHp - B.dPHp));
+  for (const p of B.parts) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; if (!p.num) p.vy += 160 * dt; }
+  B.parts = B.parts.filter(p => p.life > 0);
+  if (B.intro > 0) { B.intro -= dt; if (B.intro > 0) return; }
+  const s = B.q[0];
+  if (!s) { B.busy = false; B.wOfs = 0; B.pOfs = 0; return; }
+  B.busy = true;
+  const first = s.e === undefined; s.e = (s.e || 0) + dt;
+  const g = bgeom();
+  const wcx = g.wx + g.wspr.w * g.ws / 2, wcy = g.wy + g.wspr.h * g.ws / 2;
+  const pcx = g.px_ + g.pspr.w * g.ps / 2, pcy = g.py_ + g.pspr.h * g.ps / 2;
+  let done = false;
+  if (s.t === 'msg') {
+    if (first) { blog(''); SFX.page(); }
+    const n = Math.floor(s.e * 55);
+    B.log[B.log.length - 1] = s.s.slice(0, n);
+    done = n >= s.s.length + 16;                 // short beat after the line lands
+  } else if (s.t === 'pause') {
+    done = s.e >= (s.dur || 0.4);
+  } else if (s.t === 'lunge') {                  // hop toward the opponent and back
+    const d = 0.34, k = Math.min(1, s.e / d), arc = Math.sin(k * Math.PI) * 48;
+    if (s.who === 'p') B.pOfs = arc; else B.wOfs = -arc;
+    if (first) SFX.blip();
+    done = s.e >= d;
+  } else if (s.t === 'hit') {                    // impact: blink + shake + burst + damage number
+    if (first) {
+      if (s.who === 'w') {
+        B.hp = s.to; B.wBlink = 0.5; B.wShake = 0.4;
+        burstAt(wcx, wcy, '#fff2b0', 10);
+        B.parts.push({ x: wcx, y: g.wy - 6, vx: 0, vy: -46, life: 1, max: 1, col: '#ffe9a8', num: s.dmg });
+        SFX.hit();
+      } else {
+        B.pHp = s.to; B.pBlink = 0.5; B.pShake = 0.4;
+        burstAt(pcx, pcy, '#ff9aa8', 10);
+        B.parts.push({ x: pcx, y: g.py_ - 6, vx: 0, vy: -46, life: 1, max: 1, col: '#ff8a98', num: s.dmg });
+        SFX.hurt();
+      }
+      G.shake = 0.22;
+    }
+    done = s.e >= 0.55;
+  } else if (s.t === 'treat') {                  // treat arcs across the field
+    const d = 0.8; B.treat = { k: Math.min(1, s.e / d) };
+    if (first) SFX.pick();
+    if (s.e >= d) { B.treat = null; done = true; }
+  } else if (s.t === 'wobble') {                 // the will-it-won't-it wiggle
+    const d = 1.7;
+    B.wAngle = Math.sin(s.e * 9) * 0.22 * Math.max(0, 1 - s.e / (d * 1.15));
+    if (first) s.tick = 0;
+    const tick = Math.floor(s.e / 0.38);
+    if (tick > s.tick) { s.tick = tick; SFX.blip(); }
+    if (s.e >= d) { B.wAngle = 0; done = true; }
+  } else if (s.t === 'burst') {                  // befriended! hearts everywhere
+    if (first) { burstAt(wcx, wcy, '#ff6a8a', 16, true); burstAt(wcx, wcy, '#ffe9a8', 8); SFX.catchJingle(); }
+    done = s.e >= 1.0;
+  } else if (s.t === 'do') {
+    s.fn(); done = true;
+  }
+  if (done) B.q.shift();
+}
+function wildTurnSteps() {
+  const B = G.battle, D = B.c.d;
+  const atk = RNG.f() < 0.5 ? D.a : D.b, dmg = 10 + Math.floor(RNG.f() * 9);
+  const to = B.pHp - dmg;
+  bmsg(D.name + ' used ' + atk + '! ' + B.pName + ' takes ' + dmg + '.');
+  bq({ t: 'lunge', who: 'w' });
+  bq({ t: 'hit', who: 'p', to, dmg });
+  if (to <= 0) {
+    bmsg(B.pName + ' is all tuckered out!');
+    bq({ t: 'do', fn: () => endBattle(B.pName + ' is all tuckered out! ' + D.name + ' scampers off... for now.', true) });
+  }
 }
 function endBattle(line, sadSound) {
   G.battle = null; G.mode = 'explore'; banner(line, '', 3.4); if (sadSound) SFX.sad();
 }
 function battleChoice(n) {
-  const B = G.battle; if (!B) return;
+  const B = G.battle; if (!B || B.busy || B.q.length) return;
   const D = B.c.d;
-  if (n === 1) {
-    const dmg = 18 + Math.floor(RNG.f() * 13); B.hp = Math.max(1, B.hp - dmg);
-    blog(B.pName + ' used ' + B.pA + '! ' + D.name + "'s spirit drops by " + dmg + '.'); SFX.hit(); G.shake = 0.2;
-    if (B.hp === 1) blog(D.name + ' is all tired out! Treat time!');
-    wildTurn();
-  } else if (n === 2) {
-    const dmg = 6 + Math.floor(RNG.f() * 39); B.hp = Math.max(1, B.hp - dmg);
-    blog(dmg < 14 ? B.pName + ' used ' + B.pB + '... it kind of whiffed. ' + dmg + ' spirit.'
-                  : B.pName + ' used ' + B.pB + '! Huge! ' + D.name + "'s spirit drops by " + dmg + '.');
-    SFX.hit(); G.shake = 0.3;
-    if (B.hp === 1) blog(D.name + ' is all tired out! Treat time!');
-    wildTurn();
+  if (n === 1 || n === 2) {
+    const dmg = n === 1 ? 18 + Math.floor(RNG.f() * 13) : 6 + Math.floor(RNG.f() * 39);
+    const to = Math.max(1, B.hp - dmg);
+    if (n === 1) bmsg(B.pName + ' used ' + B.pA + '! ' + D.name + "'s spirit drops by " + dmg + '.');
+    else bmsg(dmg < 14 ? B.pName + ' used ' + B.pB + '... it kind of whiffed. ' + dmg + ' spirit.'
+                       : B.pName + ' used ' + B.pB + '! Huge! ' + D.name + "'s spirit drops by " + dmg + '.');
+    bq({ t: 'lunge', who: 'p' });
+    bq({ t: 'hit', who: 'w', to, dmg });
+    if (to === 1 && B.hp !== 1) bmsg(D.name + ' is all tired out! Treat time!');
+    wildTurnSteps();
   } else if (n === 3) {
     let chance = Math.min(0.2 + 0.6 * (1 - B.hp / B.maxHp), 0.92); if (RNG.forceCatch) chance = 1;
+    bmsg('You offer a treat. ' + D.name + ' sniffs it...');
+    bq({ t: 'treat' });
+    bq({ t: 'wobble' });
     if (RNG.f() < chance) {
-      G.caught[B.c.i] = true; G.party.push(B.c.i); SFX.catchJingle();
-      const wasLocked = !G.doorOpen && unlocked();
-      G.battle = null;
-      showCard(D.title, D.name + ' — ' + D.species + ' — joined your team!', D.text);
-      if (wasLocked) banner('The Final Room can be opened!', 'Claudia is waiting.', 4);
-      save();
-    } else { blog(D.name + ' wriggles free of the treat! So dramatic.'); wildTurn(); }
-  } else if (n === 4) endBattle('You wave goodbye. ' + D.name + ' waves back. Probably.', false);
+      bq({ t: 'burst' });
+      bq({ t: 'pause', dur: 0.4 });
+      bq({ t: 'do', fn: () => {
+        G.caught[B.c.i] = true; G.party.push(B.c.i);
+        const wasLocked = !G.doorOpen && unlocked();
+        G.battle = null;
+        showCard(D.title, D.name + ' — ' + D.species + ' — joined your team!', D.text);
+        if (wasLocked) banner('The Final Room can be opened!', 'Kyle is waiting.', 4);
+        save();
+      } });
+    } else { bmsg(D.name + ' wriggles free of the treat! So dramatic.'); wildTurnSteps(); }
+  } else if (n === 4) {
+    bmsg('You wave goodbye...');
+    bq({ t: 'do', fn: () => endBattle('You wave goodbye. ' + D.name + ' waves back. Probably.', false) });
+  }
 }
 function cyclePartner() {
   if (G.mode !== 'explore') return;
@@ -187,7 +288,7 @@ function doInteract() {
   else if (it.kind === 'keep') { G.keeps[it.i] = true; SFX.pick();
     const wasLocked = !G.doorOpen && unlocked();
     showCard(it.k.title, 'Keepsake — ' + it.k.name, it.k.text);
-    if (wasLocked) banner('The Final Room can be opened!', 'Claudia is waiting.', 4);
+    if (wasLocked) banner('The Final Room can be opened!', 'Kyle is waiting.', 4);
     save(); }
   else if (it.kind === 'sign') say(it.name, [DATA.signs[it.s.id]]);
   else if (it.kind === 'door') {
@@ -274,6 +375,7 @@ function collide(x, y) {
 function update(dt) {
   if (G.banner) { G.banner.t -= dt; if (G.banner.t <= 0) G.banner = null; }
   G.shake = Math.max(0, G.shake - dt);
+  if (G.mode === 'battle') { updateBattle(dt); return; }
   if (G.mode !== 'explore' && G.mode !== 'dialog') return;
 
   const P = G.player;
